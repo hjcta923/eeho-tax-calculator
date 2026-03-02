@@ -1,0 +1,598 @@
+/* EEHO Tax Calculator v6.0 — Teal & Ember Design System */
+
+/* ===== Google Fonts ===== */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Pretendard+Variable&display=swap');
+
+/* ===== Variables & Reset ===== */
+:root {
+  --teal: #004447;
+  --teal-l: #0a5c60;
+  --teal-xl: rgba(0,68,71,.06);
+  --ember: #F95C32;
+  --ember-d: #E04A22;
+  --ember-l: rgba(249,92,50,.08);
+  --ember-xl: rgba(249,92,50,.04);
+  --beige: #D6C0B6;
+  --beige-l: #E8DAD2;
+  --pearl: #F7F2F0;
+  --pearl-d: #EDE6E2;
+  --white: #FFFFFF;
+  --black: #1A1A18;
+  --text: #1A1A18;
+  --text-s: #4A4A48;
+  --text-m: #8A8A88;
+  --gray: #D5D5D2;
+  --gray-l: #F0EDEB;
+  --red: #D32F2F;
+  --green: #2E7D32;
+  --R: 16px;
+  --Rs: 10px;
+  --Rl: 20px;
+  --shadow: 0 2px 16px rgba(0,68,71,.06);
+  --shadow-l: 0 8px 40px rgba(0,68,71,.08);
+  --shadow-card: 0 1px 3px rgba(0,0,0,.04), 0 6px 24px rgba(0,68,71,.06);
+  --F: 'Pretendard','Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --Fh: 'Noto Serif KR','Georgia',serif;
+  --trans: .25s cubic-bezier(.4,0,.2,1);
+}
+
+#eeho-app {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 0 20px 80px;
+  font-family: var(--F);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+#eeho-app *, #eeho-app *::before, #eeho-app *::after { box-sizing: border-box; }
+#eeho-app button { font-family: var(--F); cursor: pointer; -webkit-appearance: none; border: none; background: none; }
+#eeho-app p, #eeho-app h1, #eeho-app h2, #eeho-app h3, #eeho-app ul { margin: 0; padding: 0; }
+#eeho-app ul { list-style: none; }
+#eeho-app .eh-hd { display: none !important; }
+
+/* ===== Animations ===== */
+@keyframes ehFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ehSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes ehPulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes ehRing { 0% { stroke-dashoffset: 327; } 50% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 327; } }
+@keyframes ehDots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
+
+/* ===== Hero Header ===== */
+#eeho-app .eh-hero {
+  text-align: center;
+  padding: 48px 0 36px;
+}
+#eeho-app .eh-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border: 1.5px solid var(--teal);
+  border-radius: 24px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 20px;
+}
+#eeho-app .eh-hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ember);
+}
+#eeho-app .eh-hero-title {
+  font-family: var(--Fh);
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  line-height: 1.2;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+#eeho-app .eh-hero-sub {
+  font-size: 15px;
+  color: var(--text-s);
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ===== Old Header (hidden) ===== */
+#eeho-app .eh-header { display: none; }
+
+/* ===== New Progress Bar ===== */
+#eeho-app .eh-progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  margin-bottom: 4px;
+}
+#eeho-app .eh-pg-step-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+#eeho-app .eh-pg-step-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-m);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+#eeho-app .eh-pg-track {
+  height: 4px;
+  background: var(--pearl-d);
+  border-radius: 2px;
+  margin: 0 28px;
+  overflow: hidden;
+}
+#eeho-app .eh-pg-fill {
+  height: 100%;
+  background: var(--ember);
+  border-radius: 2px;
+  transition: width .5s cubic-bezier(.4,0,.2,1);
+}
+
+/* ===== Steps ===== */
+#eeho-app .eh-step { display: none !important; }
+#eeho-app .eh-step.active { display: block !important; animation: ehFadeUp .4s ease; }
+#eeho-app .eh-ai { display: none !important; }
+#eeho-app .eh-ai.active { display: block !important; animation: ehFadeUp .4s ease; }
+
+/* ===== Cards ===== */
+#eeho-app .eh-card {
+  background: var(--white);
+  border-radius: var(--Rl);
+  padding: 40px 36px;
+  box-shadow: var(--shadow-card);
+}
+#eeho-app .eh-card-main { flex: 1; min-width: 0; }
+
+/* ===== Titles ===== */
+#eeho-app .eh-title {
+  font-family: var(--Fh);
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -.01em;
+  line-height: 1.3;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+#eeho-app .eh-subtitle {
+  font-size: 15px;
+  color: var(--text-s);
+  margin-bottom: 32px;
+}
+#eeho-app .eh-highlight {
+  color: var(--teal);
+  font-weight: 700;
+}
+
+/* ===== Step 1: Type Grid ===== */
+#eeho-app .eh-type-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+#eeho-app .eh-type-card {
+  position: relative;
+  background: var(--white);
+  border: 2px solid var(--gray-l);
+  border-radius: var(--R);
+  padding: 28px 22px 24px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all var(--trans);
+  cursor: pointer;
+  overflow: hidden;
+}
+#eeho-app .eh-type-card:hover {
+  border-color: var(--beige);
+  box-shadow: 0 4px 16px rgba(0,68,71,.06);
+}
+#eeho-app .eh-type-card.active {
+  border-color: var(--ember);
+  border-width: 2.5px;
+  background: var(--ember-xl);
+  box-shadow: 0 4px 20px rgba(249,92,50,.1);
+}
+#eeho-app .eh-type-check {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ember);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#eeho-app .eh-type-card.active .eh-type-check { display: flex; }
+#eeho-app .eh-type-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--teal);
+  margin-bottom: 6px;
+}
+#eeho-app .eh-type-card.active .eh-type-icon { color: var(--ember); }
+#eeho-app .eh-type-icon svg { width: 100%; height: 100%; }
+#eeho-app .eh-type-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+#eeho-app .eh-type-card.active .eh-type-name { color: var(--ember); }
+#eeho-app .eh-type-desc {
+  font-size: 13px;
+  color: var(--text-m);
+  line-height: 1.45;
+}
+
+/* ===== Footer ===== */
+#eeho-app .eh-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+}
+#eeho-app .eh-footer-info { font-size: 13px; color: var(--text-m); }
+
+/* Primary Button — Teal */
+#eeho-app .eh-btn-primary {
+  padding: 16px 48px;
+  font-size: 16px;
+  font-weight: 700;
+  background: var(--teal);
+  color: var(--white);
+  border-radius: var(--Rs);
+  transition: all var(--trans);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: .02em;
+}
+#eeho-app .eh-btn-primary:hover {
+  background: var(--teal-l);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,68,71,.2);
+}
+#eeho-app .eh-btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+/* Ghost Button */
+#eeho-app .eh-btn-ghost {
+  padding: 16px 32px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-s);
+  border: 1.5px solid var(--gray);
+  border-radius: var(--Rs);
+  background: transparent;
+  transition: all var(--trans);
+}
+#eeho-app .eh-btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+
+/* Outline Button */
+#eeho-app .eh-btn-outline {
+  padding: 16px 40px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teal);
+  border: 1.5px solid var(--teal);
+  border-radius: var(--Rs);
+  background: var(--white);
+  transition: all var(--trans);
+}
+#eeho-app .eh-btn-outline:hover { background: var(--teal); color: var(--white); }
+#eeho-app .eh-btn-calc { padding: 16px 56px; font-size: 17px; }
+
+/* ===== Step 2: Asset Tabs & Amount ===== */
+#eeho-app .eh-layout-2col { display: grid; grid-template-columns: 1fr 280px; gap: 20px; align-items: start; }
+#eeho-app .eh-asset-tabs { display: flex; background: var(--pearl); border-radius: var(--Rs); padding: 4px; margin-bottom: 20px; }
+#eeho-app .eh-asset-tab { flex: 1; padding: 12px 16px; font-size: 15px; font-weight: 600; text-align: center; border-radius: 8px; color: var(--text-m); transition: all var(--trans); }
+#eeho-app .eh-asset-tab.active { background: var(--teal); color: var(--white); }
+#eeho-app .eh-asset-tab.dis { opacity: .3; pointer-events: none; }
+#eeho-app .eh-re-types { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; margin-top: 16px; }
+#eeho-app .eh-chip { padding: 10px 20px; font-size: 14px; font-weight: 600; border: 1.5px solid var(--gray); border-radius: 24px; color: var(--text-s); transition: all var(--trans); background: transparent; }
+#eeho-app .eh-chip:hover { border-color: var(--teal); color: var(--teal); }
+#eeho-app .eh-chip.active { background: var(--teal); color: var(--white); border-color: var(--teal); }
+#eeho-app .eh-amount-section { margin-top: 20px; }
+#eeho-app .eh-amount-box { background: var(--pearl); border-radius: var(--R); padding: 32px 28px 24px; margin-bottom: 20px; }
+#eeho-app .eh-amount-box.sm { padding: 16px; margin-bottom: 0; background: transparent; }
+#eeho-app .eh-amount-display { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+#eeho-app .eh-amount-display.sm { justify-content: flex-start; }
+#eeho-app .eh-amount-input { font-size: 40px; font-weight: 800; text-align: center; border: none; outline: none; background: transparent; font-family: var(--F); color: var(--text); width: 100%; max-width: 500px; letter-spacing: -.02em; }
+#eeho-app .eh-amount-input.sm { font-size: 18px; font-weight: 600; text-align: right; max-width: none; }
+#eeho-app .eh-amount-input::placeholder { color: var(--gray); }
+#eeho-app .eh-amount-unit { font-size: 20px; font-weight: 600; color: var(--text-s); white-space: nowrap; }
+#eeho-app .eh-amount-kr { text-align: center; font-size: 15px; font-weight: 600; color: var(--teal); margin-top: 8px; min-height: 24px; padding: 4px 16px; display: inline-block; border-radius: 20px; background: var(--teal-xl); }
+#eeho-app .eh-amount-box.sm .eh-amount-kr { text-align: left; font-size: 12px; padding: 2px 10px; margin-top: 4px; }
+#eeho-app .eh-quick-btns { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+#eeho-app .eh-quick { padding: 8px 18px; font-size: 14px; font-weight: 500; border: 1.5px solid var(--gray); border-radius: 24px; color: var(--text-s); transition: all var(--trans); }
+#eeho-app .eh-quick:hover { border-color: var(--teal); color: var(--teal); }
+#eeho-app .eh-quick.rst { color: var(--text-m); }
+#eeho-app .eh-quick.rst:hover { border-color: var(--red); color: var(--red); }
+
+/* Side Panel */
+#eeho-app .eh-card-side { padding: 24px; position: sticky; top: 100px; }
+#eeho-app .eh-side-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+#eeho-app .eh-side-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--gray-l); font-size: 14px; }
+#eeho-app .eh-side-row span { color: var(--text-m); }
+#eeho-app .eh-side-row strong { font-weight: 600; }
+
+/* ===== Step 3: Fields ===== */
+#eeho-app .eh-field { margin-bottom: 28px; }
+#eeho-app .eh-field-label { display: block; font-size: 15px; font-weight: 800; letter-spacing: .02em; margin-bottom: 12px; color: var(--text); }
+#eeho-app .eh-field-row { display: flex; align-items: center; justify-content: space-between; }
+#eeho-app .eh-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Toggle */
+#eeho-app .eh-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+#eeho-app .eh-toggle input { display: none; }
+#eeho-app .eh-toggle-slider { width: 52px; height: 28px; background: var(--gray); border-radius: 14px; position: relative; transition: background var(--trans); flex-shrink: 0; }
+#eeho-app .eh-toggle-slider::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; background: var(--white); border-radius: 50%; transition: transform var(--trans); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+#eeho-app .eh-toggle input:checked + .eh-toggle-slider { background: var(--teal); }
+#eeho-app .eh-toggle input:checked + .eh-toggle-slider::after { transform: translateX(24px); }
+
+/* Date */
+#eeho-app .eh-date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+#eeho-app .eh-date-field label { display: block; font-size: 15px !important; font-weight: 700 !important; color: var(--text) !important; margin-bottom: 6px; }
+#eeho-app .eh-date-input { width: 100%; padding: 14px 16px; font-size: 15px; font-family: var(--F); border: 1.5px solid var(--gray); border-radius: var(--Rs); background: var(--white); color: var(--text); transition: border-color var(--trans); }
+#eeho-app .eh-date-input:focus { border-color: var(--teal); outline: none; box-shadow: 0 0 0 3px rgba(0,68,71,.08); }
+#eeho-app .eh-date-row-single { margin-top: 0; }
+#eeho-app .eh-date-row-single .eh-date-field { max-width: 50%; }
+
+/* ===== Step 4: Result ===== */
+#eeho-app .eh-result-layout { grid-template-columns: 1fr 320px; align-items: stretch; }
+#eeho-app .eh-card-result { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+#eeho-app .eh-result-label { font-size: 16px; font-weight: 700; color: var(--text-s); margin-bottom: 8px; }
+#eeho-app .eh-result-total { font-size: 44px; font-weight: 800; letter-spacing: -.03em; margin-bottom: 28px; color: var(--teal); }
+#eeho-app .eh-result-items .eh-ri { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--gray-l); font-size: 15px; }
+#eeho-app .eh-result-items .eh-ri:first-child { border-top: 1px solid var(--gray-l); }
+#eeho-app .eh-result-items .eh-ri span:first-child { color: var(--text-s); }
+#eeho-app .eh-result-items .eh-ri span:last-child { font-weight: 600; }
+#eeho-app .eh-result-note { font-size: 13px; color: var(--text-m); margin-top: 16px; }
+
+/* AI CTA Card */
+#eeho-app .eh-card-ai-cta { background: var(--teal); padding: 32px 28px; display: flex; flex-direction: column; gap: 16px; justify-content: center; min-width: 0; }
+#eeho-app .eh-ai-cta-title { font-size: 20px; font-weight: 800; color: var(--white); }
+#eeho-app .eh-ai-cta-list { padding: 0; }
+#eeho-app .eh-ai-cta-list li { padding: 4px 0; font-size: 13px; color: rgba(255,255,255,.7); white-space: nowrap; }
+#eeho-app .eh-ai-cta-list li::before { content: '• '; color: var(--ember); }
+#eeho-app .eh-ai-cta-acc { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.1); padding: 10px 16px; border-radius: var(--Rs); font-size: 14px; color: var(--white); }
+#eeho-app .eh-ai-cta-acc strong { color: var(--ember); }
+#eeho-app .eh-btn-ai { padding: 16px; font-size: 16px; font-weight: 700; background: var(--ember); color: var(--white); border-radius: var(--Rs); transition: all var(--trans); text-align: center; }
+#eeho-app .eh-btn-ai:hover { background: var(--ember-d); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(249,92,50,.3); }
+#eeho-app .eh-btn-yellow { background: var(--ember) !important; color: var(--white) !important; }
+#eeho-app .eh-btn-yellow:hover { background: var(--ember-d) !important; }
+
+/* ===== AI Chat Phase ===== */
+#eeho-app .eh-ai-header { padding: 20px 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+#eeho-app .eh-brand { font-size: 20px; font-weight: 800; letter-spacing: .03em; color: var(--text); }
+#eeho-app .eh-brand-ai { color: var(--teal); font-weight: 500; font-size: 0.85em; }
+#eeho-app .eh-ai-progress-bar { flex: 1; height: 3px; background: var(--gray); border-radius: 2px; min-width: 100px; }
+#eeho-app .eh-ai-progress-fill { height: 100%; background: var(--ember); border-radius: 2px; transition: width .5s ease; width: 0; }
+#eeho-app .eh-ai-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; min-height: 400px; align-items: stretch; }
+#eeho-app .eh-ai-chat-area { background: var(--white); border-radius: var(--R); padding: 24px; box-shadow: var(--shadow); max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; }
+
+/* Chat Bubbles */
+#eeho-app .eh-bubble { margin-bottom: 16px; animation: ehSlideIn .3s ease; }
+#eeho-app .eh-bubble.ai { display: flex; align-items: flex-start; }
+#eeho-app .eh-bubble.user { display: block; text-align: right; }
+#eeho-app .eh-bubble.user > div { display: inline-block; max-width: 80%; text-align: left; }
+#eeho-app .eh-bubble-label { font-size: 12px; font-weight: 700; color: var(--text-m); margin-bottom: 4px; }
+#eeho-app .eh-bubble-content { max-width: 80%; padding: 16px 20px; border-radius: 18px; font-size: 14px; line-height: 1.6; }
+#eeho-app .eh-bubble.ai .eh-bubble-content { background: var(--pearl); border-top-left-radius: 4px; color: var(--text); }
+#eeho-app .eh-bubble.user .eh-bubble-content { background: var(--teal); border-top-right-radius: 4px; color: var(--white); max-width: none; }
+#eeho-app .eh-bubble.ai > div { max-width: 85%; width: fit-content; }
+#eeho-app .eh-bubble.ai .eh-bubble-content { max-width: none; }
+
+/* AI Sidebar */
+#eeho-app .eh-ai-sidebar { background: var(--white); border-radius: var(--R); padding: 24px; box-shadow: var(--shadow); position: sticky; top: 100px; display: flex; flex-direction: column; }
+#eeho-app .eh-ai-sb-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+#eeho-app .eh-ai-sb-desc { font-size: 13px; color: var(--text-m); margin-bottom: 16px; line-height: 1.5; }
+
+/* ===== Examples ===== */
+#eeho-app .eh-examples { margin: 20px 0 28px; }
+#eeho-app .eh-ex-label { font-size: 12px; font-weight: 600; color: var(--text-m); margin-bottom: 10px; }
+#eeho-app .eh-ex-bubble { padding: 14px 18px; background: var(--pearl); border-radius: 16px; font-size: 14px; line-height: 1.55; color: var(--text-s); margin-bottom: 8px; cursor: default; border: 1px solid var(--pearl-d); }
+
+/* Textarea */
+#eeho-app .eh-ta-wrap { border: 1.5px solid var(--gray); border-radius: var(--R); overflow: hidden; transition: border-color var(--trans); background: var(--white); }
+#eeho-app .eh-ta-wrap:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,68,71,.08); }
+#eeho-app .eh-textarea { width: 100%; padding: 16px 18px; font-size: 15px; font-family: var(--F); border: none; outline: none; resize: none; line-height: 1.6; background: transparent; color: var(--text); }
+#eeho-app .eh-textarea::placeholder { color: var(--text-m); }
+#eeho-app .eh-ta-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 0; }
+#eeho-app .eh-ta-cnt { font-size: 12px; color: var(--text-m); }
+#eeho-app .eh-btn-full { width: 100%; margin-top: 16px; }
+#eeho-app .eh-btn-sm { padding: 10px 18px; font-size: 13px; }
+
+/* ===== Loading ===== */
+#eeho-app .eh-loading { text-align: center; padding: 80px 20px; }
+#eeho-app .eh-ld-ring { position: relative; width: 120px; height: 120px; margin: 0 auto 28px; }
+#eeho-app .eh-ld-ring svg { width: 120px; height: 120px; }
+#eeho-app .eh-ld-ring circle:first-child { stroke: var(--pearl-d); }
+#eeho-app .eh-ld-ring .eh-ld-anim { stroke: var(--ember); animation: ehRing 2s ease infinite; }
+#eeho-app .eh-ld-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+#eeho-app .eh-ld-icon svg rect { stroke: var(--teal); }
+#eeho-app .eh-ld-icon svg circle { fill: var(--teal); }
+#eeho-app .eh-ld-icon svg path { stroke: var(--teal); }
+#eeho-app .eh-ld-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+#eeho-app .eh-ld-dots::after { content: ''; animation: ehDots 1.5s infinite; }
+#eeho-app .eh-ld-desc { font-size: 15px; color: var(--text-s); line-height: 1.6; margin-bottom: 8px; }
+#eeho-app .eh-ld-wait { font-size: 13px; color: var(--text-m); margin-bottom: 20px; }
+#eeho-app .eh-ld-meta { display: flex; justify-content: center; gap: 20px; font-size: 13px; color: var(--text-m); }
+
+/* ===== Final Result ===== */
+#eeho-app .eh-final-header { margin-bottom: 20px; }
+#eeho-app .eh-result-badge { display: flex; align-items: center; gap: 16px; padding: 24px 28px; border-radius: var(--R); margin-bottom: 20px; }
+#eeho-app .eh-badge-icon { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; font-size: 28px; font-weight: 700; flex-shrink: 0; }
+#eeho-app .eh-badge-text { display: flex; flex-direction: column; gap: 2px; }
+#eeho-app .eh-badge-label { font-size: 18px; font-weight: 700; line-height: 1.3; }
+#eeho-app .eh-badge-type { font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: .7; }
+#eeho-app .eh-badge-pass { background: linear-gradient(135deg, #E0F2E9 0%, #B8DFCA 100%); border: 1.5px solid #81C784; }
+#eeho-app .eh-badge-pass .eh-badge-icon { background: var(--green); color: #fff; }
+#eeho-app .eh-badge-pass .eh-badge-label { color: #1B5E20; }
+#eeho-app .eh-badge-pass .eh-badge-type { color: var(--green); }
+#eeho-app .eh-badge-fail { background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%); border: 1.5px solid #EF9A9A; }
+#eeho-app .eh-badge-fail .eh-badge-icon { background: var(--red); color: #fff; }
+#eeho-app .eh-badge-fail .eh-badge-label { color: #B71C1C; }
+#eeho-app .eh-badge-fail .eh-badge-type { color: var(--red); }
+
+/* Compare */
+#eeho-app .eh-card-compare { margin-bottom: 20px; }
+#eeho-app .eh-compare-row { display: grid; grid-template-columns: 1fr 1fr; }
+#eeho-app .eh-compare-before, #eeho-app .eh-compare-after { padding: 20px; text-align: center; }
+#eeho-app .eh-compare-before { border-right: 1px solid var(--gray-l); }
+#eeho-app .eh-compare-label { display: block; font-size: 14px; color: var(--text-m); margin-bottom: 8px; }
+#eeho-app .eh-compare-amt { font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
+#eeho-app .eh-compare-amt.strikethrough { text-decoration: line-through; color: var(--text-m); }
+#eeho-app .eh-compare-amt.highlight { color: var(--teal); }
+
+/* Details & Risk */
+#eeho-app .eh-final-details { margin-bottom: 20px; }
+#eeho-app .eh-card-breakdown { margin-bottom: 16px; }
+#eeho-app .eh-card-breakdown h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: var(--teal); }
+#eeho-app .eh-details-text { padding: 4px 0; }
+#eeho-app .eh-details-content { white-space: pre-line; line-height: 1.8; font-size: 14.5px; color: var(--text); }
+#eeho-app .eh-card-risk { margin-bottom: 16px; border-left: 4px solid var(--ember); }
+#eeho-app .eh-card-risk h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: var(--ember); }
+#eeho-app .eh-risk-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 14px; line-height: 1.55; color: var(--text-s); }
+#eeho-app .eh-risk-item::before { content: '⚠'; flex-shrink: 0; }
+#eeho-app .eh-risk-none { color: #999 !important; background: none !important; }
+#eeho-app .eh-risk-none::before { content: "✓ " !important; color: var(--green) !important; }
+
+/* Notice */
+#eeho-app .eh-card-notice { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 24px; background: var(--teal-xl); border: 1px solid rgba(0,68,71,.12); }
+#eeho-app .eh-notice-icon { font-size: 28px; flex-shrink: 0; margin-top: 2px; }
+#eeho-app .eh-notice-text strong { display: block; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+#eeho-app .eh-notice-text p { font-size: 13px; color: var(--text-s); line-height: 1.6; margin: 0; }
+#eeho-app .eh-final-actions { display: flex; gap: 12px; align-items: center; }
+#eeho-app .eh-btn-consult { padding: 16px 40px; font-size: 16px; background: var(--ember); color: var(--white); }
+#eeho-app .eh-btn-consult:hover { background: var(--ember-d); }
+
+/* ===== Conversational Phase ===== */
+#eeho-app .eh-conv-card { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; min-height: 480px; max-height: 80vh; }
+#eeho-app .eh-conv-chat { flex: 1; overflow-y: auto; padding: 24px 20px 12px; display: flex; flex-direction: column; gap: 16px; }
+#eeho-app .eh-conv-input-area { border-top: 1px solid var(--pearl-d); padding: 20px; background: var(--pearl); }
+#eeho-app .eh-conv-input-area:empty { display: none; }
+#eeho-app .eh-conv-field { margin-bottom: 16px; }
+#eeho-app .eh-conv-label { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+#eeho-app .eh-conv-field .eh-date-input, #eeho-app .eh-conv-field .eh-text-input { width: 100%; }
+#eeho-app .eh-field-error { border-color: var(--red) !important; box-shadow: 0 0 0 2px rgba(211,47,47,.12) !important; }
+#eeho-app .eh-conv-toggle-row { display: flex; gap: 10px; }
+#eeho-app .eh-conv-toggle-btn { flex: 1; padding: 12px 16px; border: 1.5px solid var(--pearl-d); border-radius: 12px; background: #fff; font-size: 15px; font-weight: 600; color: var(--text); cursor: pointer; transition: all .2s; }
+#eeho-app .eh-conv-toggle-btn:hover { border-color: var(--teal); background: var(--teal-xl); }
+#eeho-app .eh-conv-toggle-btn.selected { border-color: var(--teal); background: var(--teal); color: #fff; }
+#eeho-app .eh-conv-submit { margin-top: 8px; }
+#eeho-app .eh-conv-select-row { display: flex; flex-wrap: wrap; gap: 8px; }
+#eeho-app .eh-conv-select-btn { padding: 10px 18px; border: 1.5px solid var(--pearl-d); border-radius: 12px; background: #fff; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; transition: all .2s; }
+#eeho-app .eh-conv-select-btn:hover { border-color: var(--teal); background: var(--teal-xl); }
+#eeho-app .eh-conv-select-btn.selected { border-color: var(--teal); background: var(--teal); color: #fff; }
+
+/* ===== Inputs ===== */
+#eeho-app .eh-extra-input { margin-top: 14px; margin-bottom: 0; }
+#eeho-app .eh-input-label { display: block; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+#eeho-app .eh-text-input { width: 100%; padding: 14px 16px; font-size: 15px; font-family: var(--F); border: 1.5px solid var(--gray); border-radius: var(--Rs); background: var(--white); color: var(--text); outline: none; transition: border-color var(--trans); }
+#eeho-app .eh-text-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,68,71,.08); }
+#eeho-app .eh-text-input::placeholder { color: var(--text-m); }
+#eeho-app .eh-required { color: var(--ember); font-weight: 700; margin-left: 2px; }
+
+/* ===== Help Popup ===== */
+#eeho-app .eh-help-btn { display: inline-flex; align-items: center; justify-content: center; width: auto; height: auto; border: none; font-size: inherit; padding: 0; margin-left: 6px; cursor: pointer; color: var(--text-m); transition: all var(--trans); }
+#eeho-app .eh-help-btn:hover { color: var(--teal); }
+#eeho-app .eh-help-btn svg { vertical-align: middle; }
+#eeho-app .eh-help-popup { position: relative; margin-top: 12px; background: var(--white); border: 1.5px solid var(--gray); border-radius: var(--R); padding: 20px; box-shadow: var(--shadow-l); animation: ehFadeUp .3s ease; }
+#eeho-app .eh-help-close { position: absolute; top: 12px; right: 14px; font-size: 22px; background: none; border: none; cursor: pointer; color: var(--text-m); padding: 0; line-height: 1; }
+#eeho-app .eh-help-close:hover { color: var(--teal); }
+#eeho-app .eh-help-popup h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; padding-right: 24px; }
+#eeho-app .eh-help-table { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.5; }
+#eeho-app .eh-help-table th, #eeho-app .eh-help-table td { border: 1px solid var(--gray); padding: 8px 10px; text-align: left; vertical-align: top; }
+#eeho-app .eh-help-table th { background: var(--pearl); font-weight: 700; white-space: nowrap; }
+#eeho-app .eh-help-table td:first-child { white-space: nowrap; font-weight: 600; }
+#eeho-app .eh-help-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+/* AI Stack */
+#eeho-app .eh-ai-stack { display: flex; flex-direction: column; gap: 20px; }
+#eeho-app .eh-ai-stack .eh-ai-chat-area { min-height: 200px; max-height: 400px; }
+#eeho-app .eh-ai-stack .eh-ai-sidebar { position: static; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  #eeho-app { padding: 0 16px 60px; }
+  #eeho-app .eh-hero-title { font-size: 28px; }
+  #eeho-app .eh-hero { padding: 32px 0 24px; }
+  #eeho-app .eh-layout-2col { grid-template-columns: 1fr; }
+  #eeho-app .eh-result-layout { grid-template-columns: 1fr; }
+  #eeho-app .eh-ai-layout { grid-template-columns: 1fr; }
+  #eeho-app .eh-ai-cta-list li { white-space: normal; }
+  #eeho-app .eh-compare-row { grid-template-columns: 1fr; }
+  #eeho-app .eh-compare-before { border-right: none; border-bottom: 1px solid var(--gray-l); padding-bottom: 20px; }
+  #eeho-app .eh-compare-amt { font-size: 28px; }
+  #eeho-app .eh-final-actions { flex-direction: column; }
+  #eeho-app .eh-final-actions a, #eeho-app .eh-final-actions button { width: 100%; text-align: center; }
+  #eeho-app .eh-date-row { grid-template-columns: 1fr; }
+  #eeho-app .eh-card { padding: 28px 20px; }
+  #eeho-app .eh-progress-bar { padding: 16px 20px; }
+  #eeho-app .eh-help-popup { padding: 14px; }
+  #eeho-app .eh-help-table { font-size: 11px; }
+  #eeho-app .eh-help-table th, #eeho-app .eh-help-table td { padding: 6px 8px; }
+}
+@media (max-width: 420px) {
+  #eeho-app .eh-type-name { font-size: 15px; }
+  #eeho-app .eh-type-card { padding: 20px 14px 16px; }
+  #eeho-app .eh-type-grid { gap: 10px; }
+  #eeho-app .eh-conv-card { min-height: 400px; }
+  #eeho-app .eh-conv-chat { padding: 16px 14px 8px; }
+  #eeho-app .eh-conv-input-area { padding: 14px; }
+  #eeho-app .eh-result-badge { padding: 18px 20px; gap: 12px; }
+  #eeho-app .eh-badge-icon { width: 44px; height: 44px; font-size: 22px; }
+  #eeho-app .eh-badge-label { font-size: 16px; }
+  #eeho-app .eh-date-row-single .eh-date-field { max-width: 100%; }
+  #eeho-app .eh-hero-title { font-size: 24px; }
+}
+
+/* ===== v6.0: Step card padding override for progress bar ===== */
+#eeho-app .eh-step .eh-card-main {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ===== v6.1: Select (dropdown) input ===== */
+#eeho-app .eh-select-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-family: var(--F);
+  border: 1.5px solid var(--gray);
+  border-radius: var(--Rs);
+  background: var(--white);
+  color: var(--text);
+  outline: none;
+  transition: border-color var(--trans);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234A4A48' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px;
+  padding-right: 40px;
+  cursor: pointer;
+}
+#eeho-app .eh-select-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(0,68,71,.08);
+}
