@@ -559,12 +559,10 @@ $('#supplementSubmit').on('click',function(){
   aiState.payload.additional_data.is_second_round = true;
 
   showLoading();
-  // 2차: 보완 내용 포함해서 /generate-questions 재호출 → 추가 체크리스트
-  callAPI(aiState.payload, '/generate-questions')
+  // 보완 텍스트 포함해서 /confirm 재호출 → 요건 재검토 후 사실관계 정리
+  callAPI(aiState.payload, '/confirm')
     .then(function(data){
       if(!data||!data.status)throw new Error('status 필드 없음');
-      if(data.status==='checklist'){renderChecklist(data);return;}
-      // 추가 질문 없이 바로 confirm/success로 올 수도 있음
       if(data.status==='confirm'){renderConfirm(data);return;}
       if(data.status==='success'){renderFinalReport(data);return;}
       throw new Error('알 수 없는 status: '+data.status);
@@ -633,23 +631,33 @@ function renderFinalReport(data){
   $('#finalAfter').text(isPASS?'₩0 (비과세)':'₩'+fmt(currentEstimatedTax));
 
   // 판단 근거: 불릿 포인트로 렌더링
+  // 판단 근거: 불릿 포인트 렌더링
   var detailHtml = '';
   if(detailText){
-    // JSON 코드블럭 제거
-    var cleanDetail = detailText.replace(/```[\s\S]*?```/g,'').replace(/^[\s\S]*?"details"\s*:\s*"/,'').replace(/"[\s\S]*/,'').trim();
-    if(!cleanDetail) cleanDetail = detailText;
-    // 【판단】【근거】【절세효과】【판례시사점】 블럭 파싱해서 불릿으로
     var bullets = [];
-    var판단 = cleanDetail.match(/【판단[^】]*】([^【]*)/);
-    var근거 = cleanDetail.match(/【근거[^】]*】([^【]*)/);
-    if(판단) bullets.push(판단[1].trim());
-    if(근거){
-      var 근거Lines = 근거[1].trim().split(/\n+/).filter(function(l){return l.trim().length>5;});
-      근거Lines.slice(0,2).forEach(function(l){ bullets.push(l.trim().replace(/^[-•·]\s*/,'')); });
+    // JSON 래퍼 제거
+    var clean = detailText
+      .replace(/```[\s\S]*?```/g,'')
+      .replace(/^[\s\S]*?"details"\s*:\s*"/,'')
+      .replace(/"[\s\S]*$/,'')
+      .trim();
+    if(!clean) clean = detailText;
+
+    // 【판단】블럭 추출
+    var mJudge = clean.match(/【판단[^】]*】([^【]+)/);
+    if(mJudge && mJudge[1].trim().length > 5){
+      bullets.push(mJudge[1].trim());
     }
+    // 【근거】블럭 추출
+    var mBase = clean.match(/【근거[^】]*】([^【]+)/);
+    if(mBase){
+      mBase[1].trim().split(/\n+/).filter(function(l){return l.trim().length>5;}).slice(0,2).forEach(function(l){
+        bullets.push(l.trim().replace(/^[-•·]\s*/,''));
+      });
+    }
+    // 블럭 없으면 줄 단위 파싱
     if(!bullets.length){
-      // 구조가 없으면 줄 단위로 파싱
-      cleanDetail.split(/\n+/).filter(function(l){return l.trim().length>10;}).slice(0,4).forEach(function(l){
+      clean.split(/\n+/).filter(function(l){return l.trim().length>10;}).slice(0,4).forEach(function(l){
         bullets.push(l.trim().replace(/^[-•·【】]\s*/,''));
       });
     }
@@ -661,7 +669,7 @@ function renderFinalReport(data){
       detailHtml += '</ul>';
     }
   }
-  $('#finalDetails').html(detailHtml || '<li style="padding:8px 0;font-size:14px;color:var(--text-m)">세무 전문가 상담 시 상세 안내드립니다.</li>');
+  $('#finalDetails').html(detailHtml || '<p style="font-size:14px;color:var(--text-m);padding:8px 0">세무 전문가 상담 시 상세 안내드립니다.</p>');
 
   // 법령 배지 + 요약 (판단근거 아래)
   var lawSummary = data.law_summary || aiState.lawSummary || '';
@@ -687,8 +695,23 @@ function handleError(err){
   showAI('#aiTextPhase');
 }
 
-$('#backToResult').on('click',function(){goStep(4);});
-$('#backToResultFromConfirm').on('click',function(){goStep(4);});
+$('#backToResult').on('click',function(){
+  // aiState 유지한 채로 결과 화면으로
+  goStep(4);
+});
+$('#backToResultFromConfirm').on('click',function(){
+  goStep(4);
+});
+
+// EEHO AI 분석하기 버튼: 이전 분석 이력 있으면 복원
+$('#startAI').off('click').on('click',function(){
+  if(aiState.factSummary){
+    // 이전 분석 이력 있음 → confirm 화면 복원
+    showAI('#aiConfirmPhase');
+  } else {
+    showAI('#aiTextPhase');
+  }
+});
 
 /* ================================================================
    INIT
