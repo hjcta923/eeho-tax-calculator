@@ -4,8 +4,9 @@ var A=$('#eeho-app');if(!A.length)return;
 
 /* ================================================================
    API CONFIG
+   ★ 수정: eeho-ai-tax-calculator → eeho-ai-api (올바른 Cloud Run 서비스)
    ================================================================ */
-var EEHO_API_URL = "https://eeho-ai-tax-calculator-1070315020839.asia-northeast3.run.app";
+var EEHO_API_URL = "https://eeho-ai-api-1070315020839.asia-northeast3.run.app";
 
 /* ================================================================
    STATE (프론트엔드 내부 상태 — UI 제어용)
@@ -192,19 +193,18 @@ function buildPayload(freeText) {
   var calcData = {
     estimated_total_tax: lastCalcResult.total || 0
   };
-  // 항목별 매핑 (calculateTax가 name으로 반환한 값 기준)
   (lastCalcResult.items || []).forEach(function(item) {
     switch (item.name) {
-      case '양도소득세':     calcData.estimated_yangdo_tax  = item.amount; break;
-      case '지방소득세':     calcData.estimated_local_tax   = item.amount; break;
-      case '중과가산':       calcData.estimated_surcharge   = item.amount; break;
-      case '취득세':         calcData.estimated_acq_tax     = item.amount; break;
-      case '지방교육세':     calcData.estimated_local_edu_tax = item.amount; break;
-      case '농어촌특별세':   calcData.estimated_rural_tax   = item.amount; break;
-      case '재산세':         calcData.estimated_property_tax = item.amount; break;
-      case '종합부동산세':   calcData.estimated_comprehensive_tax = item.amount; break;
-      case '증여세':         calcData.estimated_gift_tax    = item.amount; break;
-      case '신고세액공제':   calcData.estimated_filing_deduction = item.amount; break;
+      case '양도소득세':   calcData.estimated_yangdo_tax        = item.amount; break;
+      case '지방소득세':   calcData.estimated_local_tax         = item.amount; break;
+      case '중과가산':     calcData.estimated_surcharge         = item.amount; break;
+      case '취득세':       calcData.estimated_acq_tax           = item.amount; break;
+      case '지방교육세':   calcData.estimated_local_edu_tax     = item.amount; break;
+      case '농어촌특별세': calcData.estimated_rural_tax         = item.amount; break;
+      case '재산세':       calcData.estimated_property_tax      = item.amount; break;
+      case '종합부동산세': calcData.estimated_comprehensive_tax = item.amount; break;
+      case '증여세':       calcData.estimated_gift_tax          = item.amount; break;
+      case '신고세액공제': calcData.estimated_filing_deduction  = item.amount; break;
     }
   });
 
@@ -246,17 +246,20 @@ function buildPayload(freeText) {
 }
 
 /* ================================================================
-   API 통신
+   ★ API 통신
+   endpoint 인자로 호출할 경로를 명시적으로 받음
+   기본값: '/generate-questions'
    ================================================================ */
-function callAPI(payload) {
+function callAPI(payload, endpoint) {
+  endpoint = endpoint || '/generate-questions';
   return new Promise(function(resolve, reject) {
-    console.log('[EEHO] → API 요청:', JSON.stringify(payload, null, 2));
+    console.log('[EEHO] → API 요청 (' + endpoint + '):', JSON.stringify(payload, null, 2));
     $.ajax({
-      url: EEHO_API_URL,
-      method: 'POST',
+      url:         EEHO_API_URL + endpoint,  // ★ 엔드포인트 경로 포함
+      method:      'POST',
       contentType: 'application/json',
-      data: JSON.stringify(payload),
-      timeout: 60000,
+      data:        JSON.stringify(payload),
+      timeout:     60000,
       success: function(res) {
         console.log('[EEHO] ← API 원본:', res);
         var parsed = safeParse(res);
@@ -264,7 +267,7 @@ function callAPI(payload) {
         else reject('응답 파싱 실패');
       },
       error: function(xhr, status, err) {
-        console.error('[EEHO] API Error:', status, err);
+        console.error('[EEHO] API Error:', status, err, xhr.responseText);
         if (xhr.responseText) {
           var p = safeParse(xhr.responseText);
           if (p && p.status) { resolve(p); return; }
@@ -355,12 +358,10 @@ $('#reTypes').on('click','.eh-chip',function(){
   $('#reTypes .eh-chip').removeClass('active');
   $(this).addClass('active'); formData.reSubType=$(this).data('v');
 });
-/* ★ v6.1: 부동산 유형 드롭다운 */
 $('#reTypeSelect').on('change',function(){
   formData.reSubType=$(this).val();
 });
 
-/* ★ v6.1: 국문 금액 읽기 함수 */
 function numToKorean(n){
   if(!n||n<=0) return '';
   var units=['','만','억','조'];
@@ -401,7 +402,6 @@ $('#inpAddress').on('input',function(){ formData.address=$(this).val(); });
 $('#inpStockName').on('input',function(){ formData.stockName=$(this).val(); });
 $('#toStep3').on('click',function(){
   if(formData.amount<=0){alert('금액을 입력해주세요.');return;}
-  // 부동산이면 주소 필수
   if(formData.assetType==='re'){
     var addr=$('#inpAddress').val().trim();
     if(!addr){
@@ -443,7 +443,6 @@ A.on('click','.eh-chips .eh-chip',function(){
   else if(g==='area') formData.area=v;
   else if(g==='regulated') formData.regulated=v;
 });
-/* ★ v6.1: Step 3 드롭다운 이벤트 */
 $('#selRegulated').on('change',function(){ formData.regulated=$(this).val(); });
 $('#selHouses').on('change',function(){ formData.houses=$(this).val(); });
 $('#selReside').on('change',function(){ formData.reside=$(this).val(); });
@@ -463,7 +462,6 @@ $('#backStep2').on('click',function(){ goStep(2); });
    STEP 3 → 4: 간이 계산
    ================================================================ */
 $('#doCalc').on('click',function(){
-  // 양도세: 취득일, 양도일 필수
   if(formData.taxType==='cgt'){
     var acq=$('#inpAcqDate').val(), sale=$('#inpSaleDate').val();
     if(!acq){alert('취득일을 입력해주세요.');$('#inpAcqDate').focus();return;}
@@ -471,7 +469,7 @@ $('#doCalc').on('click',function(){
   }
   var result = calculateTax(formData);
   currentEstimatedTax = result.total;
-  lastCalcResult = result;  // ★ 항목별 내역 보관 (calculated_data용)
+  lastCalcResult = result;
   renderResult(result); goStep(4);
 });
 
@@ -515,7 +513,6 @@ $('#resetAll').on('click',function(){
   A.find('.eh-type-card').removeClass('active').first().addClass('active');
   A.find('.eh-asset-tab').removeClass('active').first().addClass('active');
   $('#reTypes .eh-chip').removeClass('active').first().addClass('active');
-  /* ★ v6.1: 드롭다운 초기화 */
   $('#reTypeSelect').val('apt');
   $('#selRegulated').val('no');
   $('#selHouses').val('1');
@@ -530,12 +527,13 @@ $('#resetAll').on('click',function(){
 });
 
 /* ================================================================
-   ===  AI FLOW: 통신 아키텍처  ===
+   ===  AI FLOW  ===
    ================================================================
    [EEHO AI로 분석하기] → 텍스트 입력
-     → [분석 요청] → buildUserData() + free_text → POST
-       → need_more_info: 대화형 추가질문 (루프)
-       → success: PASS/FAIL 최종 결과
+     → [분석 요청] → buildPayload() → POST /generate-questions
+       → need_more_info : 대화형 추가질문 (최대 1회)
+         → [확인 →] → POST /report
+       → success        : 최종 결과 렌더링
    ================================================================ */
 
 $('#startAI').on('click',function(){ showAI('#aiTextPhase'); });
@@ -543,12 +541,12 @@ $('#aiBackToResult').on('click',function(){ goStep(4); });
 $('#aiTextInput').on('input',function(){ $('#aiTxtCnt').text($(this).val().length); });
 
 /* ================================================================
-   ★ [분석 요청 →] 클릭: 새 명세서 기반 JSON Payload → API 1차 호출
+   ★ [분석 요청 →] 클릭: Payload 생성 → /generate-questions 1차 호출
    ================================================================ */
 $('#aiSendText').on('click',function(){
   var text=$('#aiTextInput').val().trim();
-  if(!text){alert('상황을 입력해주세요.');return}
-  aiState.userText = text;
+  if(!text){alert('상황을 입력해주세요.');return;}
+  aiState.userText  = text;
   aiState.callCount = 0;
   aiState.sessionId = generateSessionId();
 
@@ -557,30 +555,35 @@ $('#aiSendText').on('click',function(){
   addBubble(chat, 'user', text);
   addBubble(chat, 'ai', '안녕하세요, EEHO AI입니다.\n고객님이 제출하신 자료에 최적화된 절세 전략을 구상하고 있습니다.');
 
-  // ★ 새 명세서 기반 계층적 Payload 생성
+  // 새 명세서 기반 Payload 생성
   aiState.payload = buildPayload(text);
-
   console.log('[EEHO] ★ 최종 Payload:', JSON.stringify(aiState.payload, null, 2));
-  sendToAPI();
+
+  // ★ 1차 호출: /generate-questions
+  sendToAPI('/generate-questions');
 });
 
 /* ================================================================
-   sendToAPI: 핵심 API 호출 + 응답 분기
-   ★ aiState.payload 전체를 전송 (추가 질문 응답은 additional_data에 누적)
+   ★ sendToAPI(endpoint): 핵심 API 호출 + 응답 분기
+   endpoint: '/generate-questions' 또는 '/report'
    ================================================================ */
-function sendToAPI() {
+function sendToAPI(endpoint) {
+  endpoint = endpoint || '/generate-questions';
   var payload = aiState.payload;
   aiState.callCount++;
 
-  var pct = Math.min(90, aiState.callCount * 25);
+  var pct = Math.min(90, aiState.callCount * 30);
   $('#aiProgressFill').css('width', pct + '%');
 
   showAI('#aiLoading');
 
-  callAPI(payload)
-    .then(function(response) {
-      var data = safeParse(response);
-      if (!data || !data.status) throw new Error('올바르지 않은 응답 형식');
+  callAPI(payload, endpoint)
+    .then(function(data) {
+      // status 필드 유무 확인
+      if (!data || !data.status) {
+        console.error('[EEHO] status 필드 없음. 응답:', data);
+        throw new Error('백엔드 응답에 status 필드가 없습니다. 관리자에게 문의하세요.');
+      }
 
       if (data.status === 'need_more_info') {
         handleNeedMoreInfo(data);
@@ -591,11 +594,11 @@ function sendToAPI() {
         handleSuccess(data);
         return;
       }
-      throw new Error('알 수 없는 status: ' + data.status);
+      throw new Error('알 수 없는 status 값: ' + data.status);
     })
     .catch(function(err) {
       console.error('[EEHO] API 실패:', err);
-      alert('AI 분석 중 오류가 발생했습니다.\n' + String(err) + '\n\n다시 시도해주세요.');
+      alert('AI 분석 중 오류가 발생했습니다.\n\n' + String(err) + '\n\n잠시 후 다시 시도해주세요.');
       showAI('#aiTextPhase');
     });
 }
@@ -611,16 +614,15 @@ function handleNeedMoreInfo(data) {
 
   var chat = $('#aiConvChat');
 
-  // ★ 백엔드 응답 구조에 따라 missing 변수 추출
+  // 백엔드 응답 구조에 따라 missing 변수 추출
   var missing = [];
   if (data.missing_variables && data.missing_variables.length) {
     // 형식 A: 단순 배열
     missing = data.missing_variables;
   } else if (data.checklist && data.checklist.length) {
-    // 형식 B: checklist 배열 → fields를 합침 (중복 제거)
+    // 형식 B: checklist 배열
     var seen = {};
     data.checklist.forEach(function(item) {
-      // alias 정보를 AI 말풍선으로 표시
       if (item.alias) {
         addBubble(chat, 'ai', '📋 검토 중인 조항: ' + item.alias);
       }
@@ -633,11 +635,13 @@ function handleNeedMoreInfo(data) {
   addBubble(chat, 'ai', data.message || '정확한 분석을 위해 추가 정보가 필요합니다.');
 
   if (missing.length === 0) {
-    addBubble(chat, 'ai', '추가 정보 항목이 비어 있습니다. 다시 시도해주세요.');
+    // missing_variables가 비어 있으면 바로 /report 호출
+    addBubble(chat, 'ai', '추가 정보 수집이 완료되었습니다. 최종 분석을 시작합니다...');
+    setTimeout(function(){ sendToAPI('/report'); }, 1000);
     return;
   }
 
-  // ★ v6.1: 최대 4개로 제한
+  // 최대 4개로 제한
   if (missing.length > 4) {
     missing = missing.slice(0, 4);
   }
@@ -646,15 +650,13 @@ function handleNeedMoreInfo(data) {
 
   missing.forEach(function(varName) {
     var label = FIELD_LABELS[varName] || varName;
-
-    var html = '<div class="eh-conv-field" data-var="'+varName+'">';
+    var html  = '<div class="eh-conv-field" data-var="' + varName + '">';
     html += '<label class="eh-conv-label">' + esc(label) + '</label>';
-    // ★ v6.1: 모든 필드를 텍스트 입력으로 통일 (date 타입만 유지)
     var type = FIELD_TYPES[varName] || 'text';
     if (type === 'date') {
-      html += '<input type="date" class="eh-date-input eh-conv-input" data-var="'+varName+'">';
+      html += '<input type="date" class="eh-date-input eh-conv-input" data-var="' + varName + '">';
     } else {
-      html += '<input type="text" class="eh-text-input eh-conv-input" data-var="'+varName+'" placeholder="입력하세요">';
+      html += '<input type="text" class="eh-text-input eh-conv-input" data-var="' + varName + '" placeholder="입력하세요">';
     }
     html += '</div>';
     inputArea.append(html);
@@ -676,21 +678,23 @@ A.on('click', '.eh-conv-select-btn', function(){
   $(this).addClass('selected');
 });
 
-/* --- 대화형 폼 제출 → payload.additional_data 병합 → API 재호출 --- */
+/* ================================================================
+   ★ 대화형 폼 제출 → additional_data 병합 → /report 최종 호출
+   ================================================================ */
 A.on('click', '#convSubmit', function(){
   var allOK = true;
-  var chat = $('#aiConvChat');
+  var chat  = $('#aiConvChat');
   var answerTexts = [];
 
-  // ★ additional_data 누적 객체 초기화 (없으면 생성)
+  // additional_data 누적 초기화 (없으면 생성)
   if (!aiState.payload.additional_data) {
     aiState.payload.additional_data = {};
   }
 
   $('.eh-conv-field').each(function(){
     var varName = $(this).data('var');
-    var label = FIELD_LABELS[varName] || varName;
-    var val = $(this).find('.eh-conv-input').val();
+    var label   = FIELD_LABELS[varName] || varName;
+    var val     = $(this).find('.eh-conv-input').val();
 
     if (!val || val.trim() === '') {
       allOK = false;
@@ -699,7 +703,7 @@ A.on('click', '#convSubmit', function(){
     }
     $(this).removeClass('eh-field-error');
 
-    // ★ 추가 응답을 payload.additional_data에 병합
+    // 추가 응답을 payload.additional_data에 병합
     aiState.payload.additional_data[varName] = val.trim();
     answerTexts.push(label + ': ' + val.trim());
   });
@@ -707,40 +711,27 @@ A.on('click', '#convSubmit', function(){
   if (!allOK) { alert('모든 항목을 입력해주세요.'); return; }
 
   addBubble(chat, 'user', answerTexts.join('\n'));
+  addBubble(chat, 'ai', '감사합니다. 입력하신 정보를 바탕으로 최종 절세 분석을 진행합니다...');
   $('#aiConvInputArea').empty();
 
-  console.log('[EEHO] 보완 데이터 병합 (additional_data):', JSON.stringify(aiState.payload.additional_data, null, 2));
-  sendToAPI();
+  console.log('[EEHO] additional_data 병합 완료:', JSON.stringify(aiState.payload.additional_data, null, 2));
+
+  // ★ 2차 호출: /report (최종 리포트 생성)
+  sendToAPI('/report');
 });
 
 /* ================================================================
    CASE 2: success → 최종 결과 렌더링
-   백엔드 응답 형식 2가지 모두 대응:
-     A) { result_type:"PASS", details:"...", risk_warning:"..." }
-     B) { final_alias:"일시적 2주택", calculation:"..." }
+   백엔드 응답 형식:
+     { status:"success", result_type:"PASS"/"FAIL"/"REVIEW",
+       details:"...", risk_warning:"..." }
    ================================================================ */
 function handleSuccess(data) {
-  var origTotal = currentEstimatedTax;
-
-  // ★ 응답 구조 판별
-  var isPASS, detailText, riskText, badgeLabel;
-
-  if (data.result_type) {
-    // 형식 A: result_type 명시
-    isPASS = (data.result_type === 'PASS');
-    detailText = data.details || '';
-    riskText = data.risk_warning || '';
-  } else if (data.final_alias) {
-    // 형식 B: final_alias + calculation (Gemini 분석 결과)
-    isPASS = true; // 최종 계산까지 도달했으면 PASS
-    badgeLabel = data.final_alias;
-    detailText = data.calculation || '';
-    riskText = '';
-  } else {
-    isPASS = false;
-    detailText = '결과를 분석할 수 없습니다.';
-    riskText = '';
-  }
+  var origTotal  = currentEstimatedTax;
+  var isPASS     = (data.result_type === 'PASS');
+  var isREVIEW   = (data.result_type === 'REVIEW');
+  var detailText = data.details      || '';
+  var riskText   = data.risk_warning || '';
 
   var $badge = $('#finalResultBadge');
   $badge.removeClass('eh-badge-pass eh-badge-fail');
@@ -748,12 +739,17 @@ function handleSuccess(data) {
   if (isPASS) {
     $badge.addClass('eh-badge-pass');
     $('#finalBadgeIcon').text('✓');
-    $('#finalBadgeLabel').text(badgeLabel || '비과세 특례 적용 가능');
+    $('#finalBadgeLabel').text('비과세 특례 적용 가능');
     $('#finalBadgeType').text('PASS');
+  } else if (isREVIEW) {
+    $badge.addClass('eh-badge-fail');
+    $('#finalBadgeIcon').text('△');
+    $('#finalBadgeLabel').text('전문가 추가 검토 필요');
+    $('#finalBadgeType').text('REVIEW');
   } else {
     $badge.addClass('eh-badge-fail');
     $('#finalBadgeIcon').text('✗');
-    $('#finalBadgeLabel').text(badgeLabel || '비과세 요건 미충족');
+    $('#finalBadgeLabel').text('비과세 요건 미충족');
     $('#finalBadgeType').text('FAIL');
   }
 
@@ -779,7 +775,7 @@ function handleSuccess(data) {
    말풍선 추가 함수
    ================================================================ */
 function addBubble(container, role, text) {
-  var html = '<div class="eh-bubble '+role+'">' +
+  var html = '<div class="eh-bubble ' + role + '">' +
     '<div>' + (role==='ai' ? '<div class="eh-bubble-label">EEHO AI</div>' : '') +
     '<div class="eh-bubble-content">' + esc(text) + '</div></div></div>';
   container.append(html);
