@@ -177,7 +177,7 @@
       <div class="eh-tax-col"><span class="eh-tax-col-label">비과세 적용 후</span><div class="eh-tax-col-amt" id="confirmTaxAfter">-</div></div>
       <div class="eh-tax-col saving"><span class="eh-tax-col-label">예상 절세액</span><div class="eh-tax-col-amt" id="confirmTaxSaving">-</div></div>
     </div>
-    <p style="font-size:13px;color:var(--text-m);margin-bottom:16px;line-height:1.6">위 내용이 맞으면 <strong>예상 절세액 확인하기</strong>를 눌러주세요.<br>고객님의 상황과 요건 검토 결과에 추가로 보완하고자 하는 내용이 있는 경우 <strong>보완하기</strong>를 선택해주세요.</p>
+    <p id="confirmGuideText" style="font-size:13px;color:var(--text-m);margin-bottom:16px;line-height:1.6">위 내용이 맞으면 <strong>예상 절세액 확인하기</strong>를 눌러주세요.<br>고객님의 상황과 요건 검토 결과에 추가로 보완하고자 하는 내용이 있는 경우 <strong>보완하기</strong>를 선택해주세요.</p>
     <div class="eh-confirm-actions" id="confirmActions">
       <button class="eh-btn-supplement" id="supplementBtn" style="">✏️ 보완하기</button>
       <button class="eh-btn-submit-final" id="submitFinal">예상 절세액 확인하기 →</button>
