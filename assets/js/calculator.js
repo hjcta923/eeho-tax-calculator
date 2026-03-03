@@ -618,17 +618,49 @@ function renderFinalReport(data){
   $('#finalBefore').text('₩'+fmt(currentEstimatedTax));
   $('#finalAfter').text(isPASS?'₩0 (비과세)':'₩'+fmt(currentEstimatedTax));
 
-  // 법령 배지 + 요약 (절세효과 다음)
-  if(lawText)$('#finalAppliedLaw').text(lawText).closest('.eh-final-law-wrap').show();
+  // 판단 근거: 불릿 포인트로 렌더링
+  var detailHtml = '';
+  if(detailText){
+    // JSON 코드블럭 제거
+    var cleanDetail = detailText.replace(/```[\s\S]*?```/g,'').replace(/^[\s\S]*?"details"\s*:\s*"/,'').replace(/"[\s\S]*/,'').trim();
+    if(!cleanDetail) cleanDetail = detailText;
+    // 【판단】【근거】【절세효과】【판례시사점】 블럭 파싱해서 불릿으로
+    var bullets = [];
+    var판단 = cleanDetail.match(/【판단[^】]*】([^【]*)/);
+    var근거 = cleanDetail.match(/【근거[^】]*】([^【]*)/);
+    if(판단) bullets.push(판단[1].trim());
+    if(근거){
+      var 근거Lines = 근거[1].trim().split(/
++/).filter(function(l){return l.trim().length>5;});
+      근거Lines.slice(0,2).forEach(function(l){ bullets.push(l.trim().replace(/^[-•·]\s*/,'')); });
+    }
+    if(!bullets.length){
+      // 구조가 없으면 줄 단위로 파싱
+      cleanDetail.split(/
++/).filter(function(l){return l.trim().length>10;}).slice(0,4).forEach(function(l){
+        bullets.push(l.trim().replace(/^[-•·【】]\s*/,''));
+      });
+    }
+    if(bullets.length){
+      detailHtml = '<ul style="list-style:none;padding:0;margin:0">';
+      bullets.forEach(function(b){
+        if(b.length>5) detailHtml += '<li style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-l)"><span style="color:var(--teal);font-size:16px;flex-shrink:0;margin-top:1px">✓</span><span style="font-size:14px;line-height:1.6;color:var(--text)">'+esc(b)+'</span></li>';
+      });
+      detailHtml += '</ul>';
+    }
+  }
+  $('#finalDetails').html(detailHtml || '<li style="padding:8px 0;font-size:14px;color:var(--text-m)">세무 전문가 상담 시 상세 안내드립니다.</li>');
+
+  // 법령 배지 + 요약 (판단근거 아래)
   var lawSummary = data.law_summary || aiState.lawSummary || '';
+  if(lawText){
+    $('#finalAppliedLaw').text(lawText);
+    $('#finalLawWrap').show();
+  }
   if(lawSummary){
     $('#finalLawSummary').text(lawSummary);
     $('#finalLawSummaryWrap').show();
   }
-
-  // 판단 근거: 핵심 판단만 간결하게
-  var detailShort = detailText ? detailText.replace(/【절세\s*효과】[\s\S]*?(?=【|$)/,'').replace(/【판례\s*시사점】[\s\S]*/,'').trim() : '';
-  $('#finalDetails').html(detailShort?'<div class="eh-details-content">'+esc(detailShort)+'</div>':'<p>세무 전문가 상담 시 상세 안내드립니다.</p>');
   $('#finalRisks').html(riskText?'<div class="eh-risk-item">'+esc(riskText)+'</div>':'<div class="eh-risk-item eh-risk-none">현재 확인된 리스크가 없습니다.</div>');
 
   showAI('#aiFinal');
