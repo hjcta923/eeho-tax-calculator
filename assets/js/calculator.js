@@ -338,7 +338,7 @@ function renderResult(data){
 $('#backStep3').on('click',function(){goStep(3);});
 $('#resetAll').on('click',function(){
   formData={taxType:'cgt',assetType:'re',reSubType:'apt',amount:0,address:'',stockName:'',regulated:'no',houses:'1',saleDate:'',acqDate:'',reside:'2',area:'under85',acqPrice:0};
-  aiState={payload:{},userText:'',callCount:0,sessionId:'',applicableLaw:'',lawSummary:'',checklistAnswers:[],factSummary:'',supplementText:''};
+  aiState={payload:{},userText:'',callCount:0,sessionId:'',applicableLaw:'',lawSummary:'',checklistAnswers:[],factSummary:'',supplementText:'',isSecondRound:false};
   currentEstimatedTax=0;
   $('#inpAmount,#inpAcqPrice,#inpAddress,#inpStockName').val('');
   $('#inpAcqDate,#inpSaleDate').val('');
@@ -352,10 +352,11 @@ $('#resetAll').on('click',function(){
 
 /* ================================================================
    ===  AI FLOW  ===
-   [텍스트 입력] → /generate-questions → [체크리스트]
+   [텍스트 입력] → /generate-questions → [1차 체크리스트]
      → /confirm → [사실관계 + 제출하기/보완하기]
        → 제출하기 → /report → [최종 리포트]
-       → 보완하기 → [보완 텍스트 입력] → /report → [최종 리포트]
+       → 보완하기 → [보완 텍스트 입력] → /generate-questions → [2차 체크리스트]
+         → /confirm → [사실관계 (보완하기 없음)] → /report → [최종 리포트]
    ================================================================ */
 
 $('#startAI').on('click',function(){showAI('#aiTextPhase');});
@@ -500,6 +501,12 @@ function renderConfirm(data){
   var confCls = conf==='높음' ? 'high' : (conf==='낮음' ? 'low' : 'mid');
   $('#confirmConfidence').text(confLabel).attr('class','eh-conf-badge eh-conf-'+confCls);
 
+  // 2차 라운드면 보완하기 버튼 숨김
+  if(aiState.isSecondRound){
+    $('#supplementBtn').hide();
+  } else {
+    $('#supplementBtn').show();
+  }
   showAI('#aiConfirmPhase');
 }
 
@@ -534,26 +541,33 @@ $('#supplementInput').on('input',function(){
 });
 
 /* ================================================================
-   Phase 3b-2: [보완 제출] → RLHF 저장 + /report
+   Phase 3b-2: [보완 제출] → /generate-questions 재호출 → 2차 체크리스트
    ================================================================ */
 $('#supplementSubmit').on('click',function(){
   var text=$('#supplementInput').val().trim();
-  if(!text){alert('보완할 내용을 입력해주세요.');return;}
+  if(!text){alert('추가 상황을 입력해주세요.');return;}
   aiState.supplementText = text;
+  aiState.isSecondRound  = true;
 
-  // RLHF 데이터 WP에 저장 (비동기, 결과 무관하게 진행)
+  // RLHF 저장 (비동기)
   saveRlhfData(text);
 
-  // payload에 보완 텍스트 + fact_summary 추가
+  // 보완 텍스트를 payload에 누적
   if(!aiState.payload.additional_data)aiState.payload.additional_data={};
   aiState.payload.additional_data.supplement_text = text;
   aiState.payload.additional_data.fact_summary    = aiState.factSummary;
+  aiState.payload.additional_data.is_second_round = true;
 
   showLoading();
-  callAPI(aiState.payload, '/report')
+  // 2차: 보완 내용 포함해서 /generate-questions 재호출 → 추가 체크리스트
+  callAPI(aiState.payload, '/generate-questions')
     .then(function(data){
       if(!data||!data.status)throw new Error('status 필드 없음');
-      renderFinalReport(data);
+      if(data.status==='checklist'){renderChecklist(data);return;}
+      // 추가 질문 없이 바로 confirm/success로 올 수도 있음
+      if(data.status==='confirm'){renderConfirm(data);return;}
+      if(data.status==='success'){renderFinalReport(data);return;}
+      throw new Error('알 수 없는 status: '+data.status);
     })
     .catch(handleError);
 });
