@@ -3,7 +3,7 @@
 var A=$('#eeho-app');if(!A.length)return;
 
 /* ================================================================
-   API CONFIG — WordPress AJAX 프록시 경유 (CORS 우회)
+   API CONFIG — WordPress AJAX 프록시 경유! (CORS 우회)
    ================================================================ */
 var EEHO_API_URL = "https://eeho-ai-api-1070315020839.asia-northeast3.run.app";
 
