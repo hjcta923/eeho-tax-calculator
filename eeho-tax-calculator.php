@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: EEHO Tax Calculator
- * Description: EEHO TAX 세금 계산기 - AI 절세 분석
+ * Description: EEHO TAX 세금 계산기 - AI 절세 분석!
  * Version: 4.3.0
  * Author: EEHO TAX
  */
