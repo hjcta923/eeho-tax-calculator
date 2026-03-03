@@ -53,11 +53,14 @@
 #eeho-app .eh-badge-review .eh-badge-label{color:#92400E}
 #eeho-app .eh-badge-review .eh-badge-type{color:#B45309}
 @media(max-width:480px){#eeho-app .eh-tax-compare{grid-template-columns:1fr}#eeho-app .eh-confirm-actions{flex-direction:column}}
-#eeho-app .eh-ld-ring{position:relative;width:100px;height:100px;margin:0 auto 24px}
-#eeho-app .eh-ld-ring svg{display:block}
-#eeho-app .eh-ld-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
-@keyframes eehoSpin{0%{stroke-dashoffset:276.46}100%{stroke-dashoffset:0}}
-#eeho-app .eh-ld-anim{animation:eehoSpin 2s ease-in-out forwards}
+#eeho-app .eh-ld-robot{width:90px;height:90px;margin:0 auto 24px;display:flex;align-items:center;justify-content:center}
+@keyframes eehoBlink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(0.05)}}
+@keyframes eehoLeg{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+@keyframes eehoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+#eeho-app .eh-robot-eye{animation:eehoBlink 3s ease-in-out infinite;transform-origin:center}
+#eeho-app .eh-robot-body{animation:eehoFloat 2s ease-in-out infinite}
+#eeho-app .eh-robot-leg-l{animation:eehoLeg 1s ease-in-out infinite;transform-origin:50% 0}
+#eeho-app .eh-robot-leg-r{animation:eehoLeg 1s ease-in-out infinite reverse;transform-origin:50% 0}
 </style>
 <div id="eeho-app">
 <div class="eh-hero">
@@ -175,8 +178,8 @@
       <div class="eh-tax-col saving"><span class="eh-tax-col-label">예상 절세액</span><div class="eh-tax-col-amt" id="confirmTaxSaving">-</div></div>
     </div>
     <p style="font-size:13px;color:var(--text-m);margin-bottom:16px;line-height:1.6">위 내용이 맞으면 <strong>예상 절세액 확인하기</strong>를 눌러주세요.<br>고객님의 상황과 요건 검토 결과에 추가로 보완하고자 하는 내용이 있는 경우 <strong>보완하기</strong>를 선택해주세요.</p>
-    <div class="eh-confirm-actions">
-      <button class="eh-btn-supplement" id="supplementBtn">✏️ 보완하기</button>
+    <div class="eh-confirm-actions" id="confirmActions">
+      <button class="eh-btn-supplement" id="supplementBtn" style="">✏️ 보완하기</button>
       <button class="eh-btn-submit-final" id="submitFinal">예상 절세액 확인하기 →</button>
     </div>
     <div style="text-align:center;margin-top:12px"><button class="eh-btn-ghost eh-btn-sm" id="backToResultFromConfirm">← 결과로 돌아가기</button></div>
@@ -189,21 +192,47 @@
     <h2 class="eh-title" style="font-size:20px;margin-bottom:6px">추가 상황을 알려주세요</h2>
     <p class="eh-subtitle" style="margin-bottom:16px">사실관계 정리본에서 누락되거나 잘못된 내용이 있다면 자유롭게 입력해주세요</p>
     <div class="eh-ta-wrap"><textarea class="eh-textarea" id="supplementInput" placeholder="예: 합가일이 2023년 3월이고, 어머니 주택은 경기도 과천시에 있습니다..." rows="5" maxlength="1000"></textarea></div>
-    <div class="eh-ta-bar"><span class="eh-ta-cnt"><span id="supplementCnt">0</span>/1000</span><button class="eh-btn-primary" id="supplementSubmit">보완 완료 · 최종 분석 받기 →</button></div>
-    <div style="text-align:center;margin-top:12px"><button class="eh-btn-ghost eh-btn-sm" id="backToConfirm">← 사실관계로 돌아가기</button></div>
+    <div class="eh-ta-bar"><span class="eh-ta-cnt"><span id="supplementCnt">0</span>/1000</span></div>
+    <div style="display:flex;gap:12px;margin-top:16px">
+      <button class="eh-btn-ghost" id="backToConfirm" style="flex:1">← 사실관계로 돌아가기</button>
+      <button class="eh-btn-primary" id="supplementSubmit" style="flex:1">제출하기 →</button>
+    </div>
   </div>
 </div>
 <!-- AI Loading -->
 <div class="eh-ai" id="aiLoading">
   <div class="eh-loading">
-    <div class="eh-ld-ring">
-      <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="44" fill="none" stroke="#EDE6E2" stroke-width="4"/>
-        <circle cx="50" cy="50" r="44" fill="none" stroke="#F95C32" stroke-width="4" stroke-dasharray="276.46" stroke-dashoffset="276.46" stroke-linecap="round" class="eh-ld-anim" style="transform-origin:50px 50px;transform:rotate(-90deg)"/>
+    <div class="eh-ld-robot">
+      <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- 안테나 -->
+        <line x1="45" y1="8" x2="45" y2="18" stroke="#004447" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="45" cy="6" r="3" fill="#F95C32"/>
+        <!-- 몸통 -->
+        <g class="eh-robot-body">
+          <!-- 머리 -->
+          <rect x="22" y="18" width="46" height="34" rx="8" fill="#F7F2F0" stroke="#004447" stroke-width="2"/>
+          <!-- 눈 왼쪽 -->
+          <ellipse cx="35" cy="32" rx="5" ry="5" fill="#004447" class="eh-robot-eye"/>
+          <circle cx="37" cy="30" r="1.5" fill="white"/>
+          <!-- 눈 오른쪽 -->
+          <ellipse cx="55" cy="32" rx="5" ry="5" fill="#004447" class="eh-robot-eye"/>
+          <circle cx="57" cy="30" r="1.5" fill="white"/>
+          <!-- 입 -->
+          <path d="M37 42 Q45 47 53 42" stroke="#004447" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <!-- 몸 -->
+          <rect x="28" y="54" width="34" height="20" rx="6" fill="#004447"/>
+          <rect x="34" y="59" width="8" height="4" rx="2" fill="#F95C32"/>
+          <rect x="48" y="59" width="8" height="4" rx="2" fill="#F95C32"/>
+        </g>
+        <!-- 다리 왼쪽 -->
+        <g class="eh-robot-leg-l">
+          <rect x="32" y="73" width="10" height="14" rx="5" fill="#004447"/>
+        </g>
+        <!-- 다리 오른쪽 -->
+        <g class="eh-robot-leg-r">
+          <rect x="48" y="73" width="10" height="14" rx="5" fill="#004447"/>
+        </g>
       </svg>
-      <div class="eh-ld-icon">
-        <svg width="22" height="22" viewBox="0 0 36 36" fill="none"><rect x="7" y="7" width="22" height="16" rx="4" stroke="#004447" stroke-width="1.5"/><circle cx="14" cy="15" r="2" fill="#004447"/><circle cx="22" cy="15" r="2" fill="#004447"/><path d="M13 28l5-4 5 4" stroke="#004447" stroke-width="1.5" stroke-linecap="round"/></svg>
-      </div>
     </div>
     <h3 class="eh-ld-title">AI 분석 중<span class="eh-ld-dots"></span></h3>
     <p class="eh-ld-desc">제출하신 자료를 기반으로<br>관련 세법과 판례를 분석하고 있습니다</p>
