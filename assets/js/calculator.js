@@ -3,7 +3,7 @@
 var A=$('#eeho-app');if(!A.length)return;
 
 /* ================================================================
-   API CONFIG — WordPress AJAX 프록시 경유! (CORS 우회)
+   API CONFIG — WordPress AJAX 프록시 경유 (CORS 우회)
    ================================================================ */
 var EEHO_API_URL = "https://eeho-ai-api-1070315020839.asia-northeast3.run.app";
 
@@ -496,8 +496,9 @@ function renderConfirm(data){
 
   // 비과세 가능성
   var conf = data.confidence || '';
+  var confLabel = conf==='높음' ? '비과세 가능성 높음' : (conf==='낮음' ? '비과세 가능성 낮음' : '추가 검토 필요');
   var confCls = conf==='높음' ? 'high' : (conf==='낮음' ? 'low' : 'mid');
-  $('#confirmConfidence').text(conf).attr('class','eh-conf-badge eh-conf-'+confCls);
+  $('#confirmConfidence').text(confLabel).attr('class','eh-conf-badge eh-conf-'+confCls);
 
   showAI('#aiConfirmPhase');
 }
@@ -613,12 +614,21 @@ function renderFinalReport(data){
     $('#finalBadgeType').text('FAIL');
   }
 
-  if(lawText)$('#finalAppliedLaw').text(lawText).closest('.eh-final-law-wrap').show();
-
+  // 절세 효과 (상단)
   $('#finalBefore').text('₩'+fmt(currentEstimatedTax));
   $('#finalAfter').text(isPASS?'₩0 (비과세)':'₩'+fmt(currentEstimatedTax));
 
-  $('#finalDetails').html(detailText?'<div class="eh-details-content">'+esc(detailText)+'</div>':'<p>상세 분석 결과는 세무 전문가 상담 시 안내드립니다.</p>');
+  // 법령 배지 + 요약 (절세효과 다음)
+  if(lawText)$('#finalAppliedLaw').text(lawText).closest('.eh-final-law-wrap').show();
+  var lawSummary = data.law_summary || aiState.lawSummary || '';
+  if(lawSummary){
+    $('#finalLawSummary').text(lawSummary);
+    $('#finalLawSummaryWrap').show();
+  }
+
+  // 판단 근거: 핵심 판단만 간결하게
+  var detailShort = detailText ? detailText.replace(/【절세\s*효과】[\s\S]*?(?=【|$)/,'').replace(/【판례\s*시사점】[\s\S]*/,'').trim() : '';
+  $('#finalDetails').html(detailShort?'<div class="eh-details-content">'+esc(detailShort)+'</div>':'<p>세무 전문가 상담 시 상세 안내드립니다.</p>');
   $('#finalRisks').html(riskText?'<div class="eh-risk-item">'+esc(riskText)+'</div>':'<div class="eh-risk-item eh-risk-none">현재 확인된 리스크가 없습니다.</div>');
 
   showAI('#aiFinal');
