@@ -53,6 +53,11 @@
 #eeho-app .eh-badge-review .eh-badge-label{color:#92400E}
 #eeho-app .eh-badge-review .eh-badge-type{color:#B45309}
 @media(max-width:480px){#eeho-app .eh-tax-compare{grid-template-columns:1fr}#eeho-app .eh-confirm-actions{flex-direction:column}}
+#eeho-app .eh-ld-ring{position:relative;width:100px;height:100px;margin:0 auto 24px}
+#eeho-app .eh-ld-ring svg{display:block}
+#eeho-app .eh-ld-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+@keyframes eehoSpin{0%{stroke-dashoffset:276.46}100%{stroke-dashoffset:0}}
+#eeho-app .eh-ld-anim{animation:eehoSpin 2s ease-in-out forwards}
 </style>
 <div id="eeho-app">
 <div class="eh-hero">
@@ -182,7 +187,6 @@
   <div class="eh-ai-header"><div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div><div class="eh-ai-step-indicator">Step 2.5 of 3 · 보완 입력</div></div>
   <div class="eh-card eh-card-main" style="padding:32px 36px">
     <h2 class="eh-title" style="font-size:20px;margin-bottom:6px">추가 상황을 알려주세요</h2>
-    <div class="eh-supplement-notice"><strong>📌 이 정보는 AI 학습에 활용됩니다</strong>입력하신 보완 내용은 EEHO AI의 분석 정확도를 높이는 학습 데이터로 안전하게 저장됩니다.</div>
     <p class="eh-subtitle" style="margin-bottom:16px">사실관계 정리본에서 누락되거나 잘못된 내용이 있다면 자유롭게 입력해주세요</p>
     <div class="eh-ta-wrap"><textarea class="eh-textarea" id="supplementInput" placeholder="예: 합가일이 2023년 3월이고, 어머니 주택은 경기도 과천시에 있습니다..." rows="5" maxlength="1000"></textarea></div>
     <div class="eh-ta-bar"><span class="eh-ta-cnt"><span id="supplementCnt">0</span>/1000</span><button class="eh-btn-primary" id="supplementSubmit">보완 완료 · 최종 분석 받기 →</button></div>
@@ -192,7 +196,15 @@
 <!-- AI Loading -->
 <div class="eh-ai" id="aiLoading">
   <div class="eh-loading">
-    <div class="eh-ld-ring"><svg width="100" height="100" viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#EDE6E2" stroke-width="4"/><circle cx="60" cy="60" r="52" fill="none" stroke="#F95C32" stroke-width="4" stroke-dasharray="327" stroke-dashoffset="327" stroke-linecap="round" class="eh-ld-anim"/></svg><div class="eh-ld-icon"><svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect x="7" y="7" width="22" height="16" rx="4" stroke="#004447" stroke-width="1.5"/><circle cx="14" cy="15" r="2" fill="#004447"/><circle cx="22" cy="15" r="2" fill="#004447"/><path d="M13 28l5-4 5 4" stroke="#004447" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
+    <div class="eh-ld-ring">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="44" fill="none" stroke="#EDE6E2" stroke-width="4"/>
+        <circle cx="50" cy="50" r="44" fill="none" stroke="#F95C32" stroke-width="4" stroke-dasharray="276.46" stroke-dashoffset="276.46" stroke-linecap="round" class="eh-ld-anim" style="transform-origin:50px 50px;transform:rotate(-90deg)"/>
+      </svg>
+      <div class="eh-ld-icon">
+        <svg width="22" height="22" viewBox="0 0 36 36" fill="none"><rect x="7" y="7" width="22" height="16" rx="4" stroke="#004447" stroke-width="1.5"/><circle cx="14" cy="15" r="2" fill="#004447"/><circle cx="22" cy="15" r="2" fill="#004447"/><path d="M13 28l5-4 5 4" stroke="#004447" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+    </div>
     <h3 class="eh-ld-title">AI 분석 중<span class="eh-ld-dots"></span></h3>
     <p class="eh-ld-desc">제출하신 자료를 기반으로<br>관련 세법과 판례를 분석하고 있습니다</p>
     <p class="eh-ld-wait">잠시만 기다려주세요</p>
@@ -213,9 +225,7 @@
       <div class="eh-compare-after"><span class="eh-compare-label">AI 적용 후</span><span class="eh-compare-amt highlight" id="finalAfter">₩0</span></div>
     </div>
   </div>
-  <div class="eh-final-law-wrap"><span class="eh-final-law" id="finalAppliedLaw"></span></div>
-  <div class="eh-final-law-summary-wrap" id="finalLawSummaryWrap" style="font-size:14px;color:var(--text-s);line-height:1.6;background:var(--pearl);border-radius:10px;padding:14px 18px;margin-bottom:16px;border-left:4px solid var(--teal);display:none"><span id="finalLawSummary"></span></div>
-  <div class="eh-final-details"><div class="eh-card eh-card-breakdown"><h3>📋 판단 근거</h3><div id="finalDetails" class="eh-details-text"></div></div></div>
+  <div class="eh-final-details"><div class="eh-card eh-card-breakdown"><h3>📋 판단 근거</h3><div id="finalDetails" class="eh-details-text"></div><div class="eh-final-law-wrap" style="margin-top:16px;display:none" id="finalLawWrap"><span class="eh-final-law" id="finalAppliedLaw"></span></div><div class="eh-final-law-summary-wrap" id="finalLawSummaryWrap" style="font-size:13px;color:var(--text-m);line-height:1.6;background:var(--pearl);border-radius:8px;padding:12px 16px;margin-top:10px;border-left:3px solid var(--teal);display:none"><span id="finalLawSummary"></span></div></div></div>
   <div class="eh-card eh-card-risk"><h3>⚠ 리스크 안내</h3><div id="finalRisks" class="eh-risk-list"></div></div>
   <div class="eh-card eh-card-notice"><div class="eh-notice-icon">📋</div><div class="eh-notice-text"><strong>세무사 검토 안내</strong><p>위 분석은 AI가 세법 데이터를 기반으로 산출한 예상 결과이며, 실제 신고 시에는 반드시 세무 전문가의 검토가 필요합니다.</p></div></div>
   <div class="eh-final-actions">
