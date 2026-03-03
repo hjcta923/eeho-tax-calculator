@@ -561,8 +561,8 @@ $('#supplementSubmit').on('click',function(){
   aiState.payload.additional_data.is_second_round = true;
 
   showLoading();
-  // 2차: 보완 내용 포함해서 /generate-questions 재호출 → 추가 체크리스트
-  callAPI(aiState.payload, '/generate-questions')
+  // 보완 텍스트 포함해서 /confirm 직접 호출 (체크리스트 없이 요건 재검토)
+  callAPI(aiState.payload, '/confirm')
     .then(function(data){
       if(!data||!data.status)throw new Error('status 필드 없음');
       if(data.status==='checklist'){renderChecklist(data);return;}
@@ -642,12 +642,13 @@ function renderFinalReport(data){
     if(!cleanDetail) cleanDetail = detailText;
     // 【판단】【근거】【절세효과】【판례시사점】 블럭 파싱해서 불릿으로
     var bullets = [];
-    var판단 = cleanDetail.match(/【판단[^】]*】([^【]*)/);
-    var근거 = cleanDetail.match(/【근거[^】]*】([^【]*)/);
-    if(판단) bullets.push(판단[1].trim());
-    if(근거){
-      var 근거Lines = 근거[1].trim().split(/\n+/).filter(function(l){return l.trim().length>5;});
-      근거Lines.slice(0,2).forEach(function(l){ bullets.push(l.trim().replace(/^[-•·]\s*/,'')); });
+    var mJudge = cleanDetail.match(/【판단[^】]*】([^【]*)/);
+    var mBase  = cleanDetail.match(/【근거[^】]*】([^【]*)/);
+    if(mJudge && mJudge[1].trim().length>5) bullets.push(mJudge[1].trim());
+    if(mBase){
+      mBase[1].trim().split(/\n+/).filter(function(l){return l.trim().length>5;}).slice(0,2).forEach(function(l){
+        bullets.push(l.trim().replace(/^[-•·]\s*/,''));
+      });
     }
     if(!bullets.length){
       // 구조가 없으면 줄 단위로 파싱
