@@ -246,28 +246,58 @@ function buildPayload(freeText) {
 }
 
 /* ================================================================
-   ★ API 통신
-   endpoint 인자로 호출할 경로를 명시적으로 받음
-   기본값: '/generate-questions'
+   ★ API 통신 — WordPress AJAX 프록시 경유 (CORS 우회)
+   ──────────────────────────────────────────────────────────────
+   브라우저 → WP admin-ajax.php(eeho_api_proxy) → Cloud Run
+   서버 간 통신이므로 CORS 제약 없음
+   eehoTax.ajax / eehoTax.nonce 는 wp_localize_script가 주입
    ================================================================ */
 function callAPI(payload, endpoint) {
   endpoint = endpoint || '/generate-questions';
+
+  // wp_localize_script가 주입한 값 우선 사용, 없으면 폴백
+  var ajaxUrl = (typeof eehoTax !== 'undefined' && eehoTax.ajax)
+                ? eehoTax.ajax
+                : '/wp-admin/admin-ajax.php';
+  var nonce   = (typeof eehoTax !== 'undefined' && eehoTax.nonce)
+                ? eehoTax.nonce
+                : '';
+
+  console.log('[EEHO] → WP Proxy 요청 (' + endpoint + '):', JSON.stringify(payload, null, 2));
+
   return new Promise(function(resolve, reject) {
-    console.log('[EEHO] → API 요청 (' + endpoint + '):', JSON.stringify(payload, null, 2));
     $.ajax({
-      url:         EEHO_API_URL + endpoint,  // ★ 엔드포인트 경로 포함
-      method:      'POST',
-      contentType: 'application/json',
-      data:        JSON.stringify(payload),
-      timeout:     60000,
+      url:    ajaxUrl,
+      method: 'POST',
+      // WP AJAX는 form-encoded 방식으로 전송
+      data: {
+        action:   'eeho_api_proxy',
+        nonce:    nonce,
+        payload:  JSON.stringify(payload),  // JSON 문자열로 직렬화
+        endpoint: endpoint                  // PHP 프록시가 경로 분기에 사용
+      },
+      timeout: 90000,  // Gemini 응답 대기 여유 (90초)
       success: function(res) {
-        console.log('[EEHO] ← API 원본:', res);
-        var parsed = safeParse(res);
-        if (parsed) resolve(parsed);
-        else reject('응답 파싱 실패');
+        console.log('[EEHO] ← WP Proxy 원본:', res);
+
+        // wp_send_json_success → { success: true, data: {...} }
+        // wp_send_json_error   → { success: false, data: "..." }
+        if (res && res.success === false) {
+          reject('프록시 오류: ' + (res.data || '알 수 없는 오류'));
+          return;
+        }
+
+        var inner = (res && res.success && res.data) ? res.data : res;
+        var parsed = safeParse(inner);
+        if (parsed) {
+          resolve(parsed);
+        } else {
+          reject('응답 파싱 실패');
+        }
       },
       error: function(xhr, status, err) {
-        console.error('[EEHO] API Error:', status, err, xhr.responseText);
+        console.error('[EEHO] WP Proxy Error:', status, err, xhr.responseText);
+        // 응답 바디에 status 필드가 있으면 정상 처리
         if (xhr.responseText) {
           var p = safeParse(xhr.responseText);
           if (p && p.status) { resolve(p); return; }
