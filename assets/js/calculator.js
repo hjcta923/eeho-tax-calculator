@@ -634,49 +634,73 @@ function renderFinalReport(data){
   $('#finalBefore').text('₩'+fmt(currentEstimatedTax));
   $('#finalAfter').text(isPASS?'₩0 (비과세)':'₩'+fmt(currentEstimatedTax));
 
-  // 판단 근거: 불릿 포인트로 렌더링
-  var detailHtml = '';
-  if(detailText){
-    // JSON 코드블럭 제거
-    var cleanDetail = detailText.replace(/```[\s\S]*?```/g,'').replace(/^[\s\S]*?"details"\s*:\s*"/,'').replace(/"[\s\S]*/,'').trim();
-    if(!cleanDetail) cleanDetail = detailText;
-    // 【판단】【근거】【절세효과】【판례시사점】 블럭 파싱해서 불릿으로
-    var bullets = [];
-    var mJudge = cleanDetail.match(/【판단[^】]*】([^【]*)/);
-    var mBase  = cleanDetail.match(/【근거[^】]*】([^【]*)/);
-    if(mJudge && mJudge[1].trim().length>5) bullets.push(mJudge[1].trim());
-    if(mBase){
-      mBase[1].trim().split(/\n+/).filter(function(l){return l.trim().length>5;}).slice(0,2).forEach(function(l){
-        bullets.push(l.trim().replace(/^[-•·]\s*/,''));
-      });
-    }
-    if(!bullets.length){
-      // 구조가 없으면 줄 단위로 파싱
-      cleanDetail.split(/\n+/).filter(function(l){return l.trim().length>10;}).slice(0,4).forEach(function(l){
-        bullets.push(l.trim().replace(/^[-•·【】]\s*/,''));
-      });
-    }
-    if(bullets.length){
-      detailHtml = '<ul style="list-style:none;padding:0;margin:0">';
-      bullets.forEach(function(b){
-        if(b.length>5) detailHtml += '<li style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-l)"><span style="color:var(--teal);font-size:16px;flex-shrink:0;margin-top:1px">✓</span><span style="font-size:14px;line-height:1.6;color:var(--text)">'+esc(b)+'</span></li>';
-      });
-      detailHtml += '</ul>';
-    }
+  // ── 핵심 키워드 강조 함수 ──────────────────────────────
+  function highlight(txt){
+    return esc(txt)
+      .replace(/(비과세|절세|감면|공제|특례|요건 충족|적용 가능)/g,
+               '<strong style="color:var(--teal);text-decoration:underline">$1</strong>')
+      .replace(/(미충족|적용 불가|주의|위험|추징)/g,
+               '<strong style="color:var(--red);text-decoration:underline">$1</strong>')
+      .replace(/([0-9,]+원)/g,'<strong>$1</strong>')
+      .replace(/(3년|2년|1년|[0-9]+개월)/g,'<u><strong>$1</strong></u>');
   }
-  $('#finalDetails').html(detailHtml || '<li style="padding:8px 0;font-size:14px;color:var(--text-m)">세무 전문가 상담 시 상세 안내드립니다.</li>');
 
-  // 법령 배지 + 요약 (판단근거 아래)
+  // ── 텍스트 → 문장 단위 불릿 변환 ──────────────────────
+  function toBullets(raw, max){
+    if(!raw) return [];
+    var clean = raw
+      .replace(/```[\s\S]*?```/g,'')
+      .replace(/【[^】]+】/g,'')
+      .replace(/\\n/g,' ')
+      .trim();
+    // 마침표/느낌표/물음표 기준으로 문장 분리
+    var sents = clean.split(/(?<=[.!?。])\s+|(?<=합니다)\s+|(?<=습니다)\s+|(?<=됩니다)\s+/)
+      .map(function(s){ return s.trim().replace(/^[-•·✓·]\s*/,''); })
+      .filter(function(s){ return s.length > 8; });
+    // 중복 제거 + 상위 max개
+    var seen = {};
+    var result = [];
+    sents.forEach(function(s){
+      var key = s.slice(0,15);
+      if(!seen[key]){ seen[key]=1; result.push(s); }
+    });
+    return result.slice(0, max||3);
+  }
+
+  // ── 판단 근거 렌더 ────────────────────────────────────
+  var detailBullets = toBullets(detailText, 3);
+  var detailHtml = '';
+  if(detailBullets.length){
+    detailHtml = '<ul style="list-style:none;padding:0;margin:0">';
+    detailBullets.forEach(function(b){
+      detailHtml += '<li style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-l)">'
+        + '<span style="color:var(--teal);font-weight:700;flex-shrink:0;margin-top:2px">✓</span>'
+        + '<span style="font-size:14px;line-height:1.7;color:var(--text)">'+highlight(b)+'</span>'
+        + '</li>';
+    });
+    detailHtml += '</ul>';
+  }
+  $('#finalDetails').html(detailHtml || '<p style="font-size:14px;color:var(--text-m);padding:8px 0">세무 전문가 상담 시 안내드립니다.</p>');
+
+  // ── 법령 배지 + 요약 (판단근거 아래) ─────────────────
   var lawSummary = data.law_summary || aiState.lawSummary || '';
-  if(lawText){
-    $('#finalAppliedLaw').text(lawText);
-    $('#finalLawWrap').show();
+  if(lawText){ $('#finalAppliedLaw').text(lawText); $('#finalLawWrap').show(); }
+  if(lawSummary){ $('#finalLawSummary').text(lawSummary); $('#finalLawSummaryWrap').show(); }
+
+  // ── 리스크 불릿 렌더 ─────────────────────────────────
+  var riskBullets = toBullets(riskText, 2);
+  var riskHtml = '';
+  if(riskBullets.length){
+    riskHtml = '<ul style="list-style:none;padding:0;margin:0">';
+    riskBullets.forEach(function(b){
+      riskHtml += '<li style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(249,92,50,.15)">'
+        + '<span style="color:var(--ember);font-weight:700;flex-shrink:0;margin-top:2px">△</span>'
+        + '<span style="font-size:14px;line-height:1.7;color:var(--text)">'+highlight(b)+'</span>'
+        + '</li>';
+    });
+    riskHtml += '</ul>';
   }
-  if(lawSummary){
-    $('#finalLawSummary').text(lawSummary);
-    $('#finalLawSummaryWrap').show();
-  }
-  $('#finalRisks').html(riskText?'<div class="eh-risk-item">'+esc(riskText)+'</div>':'<div class="eh-risk-item eh-risk-none">현재 확인된 리스크가 없습니다.</div>');
+  $('#finalRisks').html(riskHtml || '<p style="font-size:14px;color:var(--text-m);padding:8px 0">현재 확인된 리스크가 없습니다.</p>');
 
   showAI('#aiFinal');
 }
