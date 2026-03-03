@@ -147,8 +147,8 @@
 <div class="eh-ai" id="aiChecklistPhase">
   <div class="eh-ai-header"><div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div><div class="eh-ai-step-indicator">Step 1 of 3 · 요건 확인</div></div>
   <div class="eh-card eh-card-main" style="padding:32px 36px">
-    <div class="eh-law-badge" id="checklistLawName">소득세법 검토 중</div>
-    <div class="eh-law-summary" id="checklistLawSummary"></div>
+    <div class="eh-law-badge" id="checklistLawName" style="display:none"></div>
+    <div class="eh-law-summary" id="checklistLawSummary" style="display:none"></div>
     <h2 class="eh-title" style="font-size:20px;margin-bottom:6px">아래 항목을 확인해주세요</h2>
     <p class="eh-subtitle" style="margin-bottom:20px">정확한 판단을 위해 3가지 핵심 요건을 확인합니다</p>
     <div id="checklistQuestions"></div>
@@ -164,15 +164,15 @@
     <div class="eh-fact-box" id="confirmFactSummary"></div>
     <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--teal)">📋 요건 검토 결과</h3>
     <div id="confirmRequirements" style="margin-bottom:20px"></div>
-    <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--teal)">💰 예상 절세 효과</h3>
-    <div class="eh-tax-compare">
+    <div class="eh-tax-compare" style="display:none">
       <div class="eh-tax-col"><span class="eh-tax-col-label">현재 예상세액</span><div class="eh-tax-col-amt" id="confirmTaxBefore">-</div></div>
       <div class="eh-tax-col"><span class="eh-tax-col-label">비과세 적용 후</span><div class="eh-tax-col-amt" id="confirmTaxAfter">-</div></div>
       <div class="eh-tax-col saving"><span class="eh-tax-col-label">예상 절세액</span><div class="eh-tax-col-amt" id="confirmTaxSaving">-</div></div>
     </div>
+    <p style="font-size:13px;color:var(--text-m);margin-bottom:16px;line-height:1.6">위 내용이 맞으면 <strong>예상 절세액 확인하기</strong>를 눌러주세요.<br>고객님의 상황과 요건 검토 결과에 추가로 보완하고자 하는 내용이 있는 경우 <strong>보완하기</strong>를 선택해주세요.</p>
     <div class="eh-confirm-actions">
       <button class="eh-btn-supplement" id="supplementBtn">✏️ 보완하기</button>
-      <button class="eh-btn-submit-final" id="submitFinal">최종 분석 리포트 받기 →</button>
+      <button class="eh-btn-submit-final" id="submitFinal">예상 절세액 확인하기 →</button>
     </div>
     <div style="text-align:center;margin-top:12px"><button class="eh-btn-ghost eh-btn-sm" id="backToResultFromConfirm">← 결과로 돌아가기</button></div>
   </div>
@@ -207,14 +207,15 @@
       <div class="eh-badge-text"><span class="eh-badge-label" id="finalBadgeLabel">비과세 특례 적용 가능</span><span class="eh-badge-type" id="finalBadgeType">PASS</span></div>
     </div>
   </div>
-  <div class="eh-final-law-wrap" style="display:none"><span class="eh-final-law" id="finalAppliedLaw"></span></div>
   <div class="eh-card eh-card-compare">
     <div class="eh-compare-row">
       <div class="eh-compare-before"><span class="eh-compare-label">AI 적용 전</span><span class="eh-compare-amt strikethrough" id="finalBefore">₩0</span></div>
       <div class="eh-compare-after"><span class="eh-compare-label">AI 적용 후</span><span class="eh-compare-amt highlight" id="finalAfter">₩0</span></div>
     </div>
   </div>
-  <div class="eh-final-details"><div class="eh-card eh-card-breakdown"><h3>📋 상세 분석</h3><div id="finalDetails" class="eh-details-text"></div></div></div>
+  <div class="eh-final-law-wrap"><span class="eh-final-law" id="finalAppliedLaw"></span></div>
+  <div class="eh-final-law-summary-wrap" id="finalLawSummaryWrap" style="font-size:14px;color:var(--text-s);line-height:1.6;background:var(--pearl);border-radius:10px;padding:14px 18px;margin-bottom:16px;border-left:4px solid var(--teal);display:none"><span id="finalLawSummary"></span></div>
+  <div class="eh-final-details"><div class="eh-card eh-card-breakdown"><h3>📋 판단 근거</h3><div id="finalDetails" class="eh-details-text"></div></div></div>
   <div class="eh-card eh-card-risk"><h3>⚠ 리스크 안내</h3><div id="finalRisks" class="eh-risk-list"></div></div>
   <div class="eh-card eh-card-notice"><div class="eh-notice-icon">📋</div><div class="eh-notice-text"><strong>세무사 검토 안내</strong><p>위 분석은 AI가 세법 데이터를 기반으로 산출한 예상 결과이며, 실제 신고 시에는 반드시 세무 전문가의 검토가 필요합니다.</p></div></div>
   <div class="eh-final-actions">
