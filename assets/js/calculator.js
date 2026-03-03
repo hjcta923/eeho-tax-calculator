@@ -630,14 +630,12 @@ function renderFinalReport(data){
     var근거 = cleanDetail.match(/【근거[^】]*】([^【]*)/);
     if(판단) bullets.push(판단[1].trim());
     if(근거){
-      var 근거Lines = 근거[1].trim().split(/
-+/).filter(function(l){return l.trim().length>5;});
+      var 근거Lines = 근거[1].trim().split(/\n+/).filter(function(l){return l.trim().length>5;});
       근거Lines.slice(0,2).forEach(function(l){ bullets.push(l.trim().replace(/^[-•·]\s*/,'')); });
     }
     if(!bullets.length){
       // 구조가 없으면 줄 단위로 파싱
-      cleanDetail.split(/
-+/).filter(function(l){return l.trim().length>10;}).slice(0,4).forEach(function(l){
+      cleanDetail.split(/\n+/).filter(function(l){return l.trim().length>10;}).slice(0,4).forEach(function(l){
         bullets.push(l.trim().replace(/^[-•·【】]\s*/,''));
       });
     }
