@@ -604,15 +604,12 @@ function saveRlhfData(supplementText){
    최종 리포트 렌더링
    ================================================================ */
 function renderFinalReport(data){
-  var isPASS    = data.result_type==='PASS';
-  var isREVIEW  = data.result_type==='REVIEW';
-  var detailText= data.details      || '';
-  var riskText  = data.risk_warning || '';
-  var lawText   = data.applicable_law || aiState.applicableLaw || '';
+  var isPASS   = data.result_type==='PASS';
+  var isREVIEW = data.result_type==='REVIEW';
 
+  // ── 배지 ──────────────────────────────────────────────────────
   var $badge=$('#finalResultBadge');
   $badge.removeClass('eh-badge-pass eh-badge-fail eh-badge-review');
-
   if(isPASS){
     $badge.addClass('eh-badge-pass');
     $('#finalBadgeIcon').text('✓');
@@ -630,22 +627,61 @@ function renderFinalReport(data){
     $('#finalBadgeType').text('FAIL');
   }
 
-  // 절세 효과 (상단)
-  $('#finalBefore').text('₩'+fmt(currentEstimatedTax));
-  $('#finalAfter').text(isPASS?'₩0 (비과세)':'₩'+fmt(currentEstimatedTax));
+  // ── 세액 비교 (핵심 변경) ────────────────────────────────────
+  var baseTax   = data.base_tax          || currentEstimatedTax || 0;
+  var afterTax  = (data.tax_after_applied != null) ? data.tax_after_applied : baseTax;
+  var confPct   = (typeof data.confidence_pct === 'number') ? data.confidence_pct : null;
 
-  // ── 핵심 키워드 강조 함수 ──────────────────────────────
+  // 적용 가능성 색상
+  var pctColor = '#888';
+  if(confPct !== null){
+    if(confPct >= 70)      pctColor = 'var(--teal)';
+    else if(confPct >= 40) pctColor = '#e08800';
+    else                   pctColor = 'var(--ember)';
+  }
+
+  // "AI 적용 전" — 현재 예상 세액
+  $('#finalBefore').text('₩'+fmt(baseTax));
+
+  // "AI 적용 후" — 조문 적용 시 세액 + 적용 가능성 배지
+  var afterHtml = '<span style="font-size:1.4em;font-weight:700;color:var(--teal)">₩'+fmt(afterTax)+'</span>';
+  if(confPct !== null){
+    afterHtml +=
+      '<span style="'
+      +'display:inline-block;margin-left:10px;padding:3px 10px;'
+      +'border-radius:20px;font-size:12px;font-weight:700;'
+      +'background:'+pctColor+';color:#fff;vertical-align:middle;'
+      +'white-space:nowrap'
+      +'">적용 가능성 '+confPct+'%</span>';
+  }
+  var $afterEl = $('#finalAfter');
+  // finalAfter가 span이면 부모 div에 html 삽입
+  if($afterEl.length){
+    $afterEl.html(afterHtml);
+  }
+
+  // 절세 효과 문구 (금액 차이)
+  var saving = baseTax - afterTax;
+  if(saving > 0 && confPct !== null){
+    var savingTxt = '특례 적용 시 최대 ₩'+fmt(saving)+' 절세 가능'
+      +(confPct < 70 ? ' — 세무 전문가 확인 권장' : '');
+    $('#finalTaxSaving').text(savingTxt).show();
+  } else {
+    $('#finalTaxSaving').hide();
+  }
+
+  // ── 키워드 강조 함수 ──────────────────────────────────────────
   function highlight(txt){
     return esc(txt)
       .replace(/(비과세|절세|감면|공제|특례|요건 충족|적용 가능)/g,
                '<strong style="color:var(--teal);text-decoration:underline">$1</strong>')
       .replace(/(미충족|적용 불가|주의|위험|추징)/g,
-               '<strong style="color:var(--red);text-decoration:underline">$1</strong>')
+               '<strong style="color:var(--red,#e53935);text-decoration:underline">$1</strong>')
       .replace(/([0-9,]+원)/g,'<strong>$1</strong>')
       .replace(/(3년|2년|1년|[0-9]+개월)/g,'<u><strong>$1</strong></u>');
   }
 
-  // ── 텍스트 → 문장 단위 불릿 변환 ──────────────────────
+  // ── 텍스트 → 문장 단위 불릿 변환 ─────────────────────────────
   function toBullets(raw, max){
     if(!raw) return [];
     var clean = raw
@@ -653,54 +689,60 @@ function renderFinalReport(data){
       .replace(/【[^】]+】/g,'')
       .replace(/\\n/g,' ')
       .trim();
-    // 마침표/느낌표/물음표 기준으로 문장 분리
     var sents = clean.split(/(?<=[.!?。])\s+|(?<=합니다)\s+|(?<=습니다)\s+|(?<=됩니다)\s+/)
       .map(function(s){ return s.trim().replace(/^[-•·✓·]\s*/,''); })
       .filter(function(s){ return s.length > 8; });
-    // 중복 제거 + 상위 max개
-    var seen = {};
-    var result = [];
+    var seen={}, result=[];
     sents.forEach(function(s){
-      var key = s.slice(0,15);
+      var key=s.slice(0,15);
       if(!seen[key]){ seen[key]=1; result.push(s); }
     });
     return result.slice(0, max||3);
   }
 
-  // ── 판단 근거 렌더 ────────────────────────────────────
-  var detailBullets = toBullets(detailText, 3);
-  var detailHtml = '';
+  // ── 판단 근거 ─────────────────────────────────────────────────
+  var detailBullets = toBullets(data.details||'', 3);
+  var detailHtml='';
   if(detailBullets.length){
-    detailHtml = '<ul style="list-style:none;padding:0;margin:0">';
+    detailHtml='<ul style="list-style:none;padding:0;margin:0">';
     detailBullets.forEach(function(b){
-      detailHtml += '<li style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-l)">'
-        + '<span style="color:var(--teal);font-weight:700;flex-shrink:0;margin-top:2px">✓</span>'
-        + '<span style="font-size:14px;line-height:1.7;color:var(--text)">'+highlight(b)+'</span>'
-        + '</li>';
+      detailHtml+='<li style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-l)">'
+        +'<span style="color:var(--teal);font-weight:700;flex-shrink:0;margin-top:2px">✓</span>'
+        +'<span style="font-size:14px;line-height:1.7;color:var(--text)">'+highlight(b)+'</span>'
+        +'</li>';
     });
-    detailHtml += '</ul>';
+    detailHtml+='</ul>';
   }
-  $('#finalDetails').html(detailHtml || '<p style="font-size:14px;color:var(--text-m);padding:8px 0">세무 전문가 상담 시 안내드립니다.</p>');
+  $('#finalDetails').html(detailHtml||'<p style="font-size:14px;color:var(--text-m);padding:8px 0">세무 전문가 상담 시 안내드립니다.</p>');
 
-  // ── 법령 배지 + 요약 (판단근거 아래) ─────────────────
-  var lawSummary = data.law_summary || aiState.lawSummary || '';
-  if(lawText){ $('#finalAppliedLaw').text(lawText); $('#finalLawWrap').show(); }
-  if(lawSummary){ $('#finalLawSummary').text(lawSummary); $('#finalLawSummaryWrap').show(); }
+  // ── 법령 배지 ─────────────────────────────────────────────────
+  var lawText    = data.applicable_law || aiState.applicableLaw || '';
+  var lawSummary = data.law_summary    || aiState.lawSummary    || '';
+  if(lawText){    $('#finalAppliedLaw').text(lawText);       $('#finalLawWrap').show(); }
+  if(lawSummary){ $('#finalLawSummary').text(lawSummary);    $('#finalLawSummaryWrap').show(); }
 
-  // ── 리스크 불릿 렌더 ─────────────────────────────────
-  var riskBullets = toBullets(riskText, 2);
-  var riskHtml = '';
+  // ── 리스크 (미충족 요건 강조) ─────────────────────────────────
+  var riskBullets = toBullets(data.risk_warning||'', 3);
+  var riskHtml='';
   if(riskBullets.length){
-    riskHtml = '<ul style="list-style:none;padding:0;margin:0">';
+    riskHtml='<ul style="list-style:none;padding:0;margin:0">';
     riskBullets.forEach(function(b){
-      riskHtml += '<li style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(249,92,50,.15)">'
-        + '<span style="color:var(--ember);font-weight:700;flex-shrink:0;margin-top:2px">△</span>'
-        + '<span style="font-size:14px;line-height:1.7;color:var(--text)">'+highlight(b)+'</span>'
-        + '</li>';
+      riskHtml+='<li style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(249,92,50,.15)">'
+        +'<span style="color:var(--ember);font-weight:700;flex-shrink:0;margin-top:2px">△</span>'
+        +'<span style="font-size:14px;line-height:1.7;color:var(--text)">'+highlight(b)+'</span>'
+        +'</li>';
     });
-    riskHtml += '</ul>';
+    riskHtml+='</ul>';
   }
-  $('#finalRisks').html(riskHtml || '<p style="font-size:14px;color:var(--text-m);padding:8px 0">현재 확인된 리스크가 없습니다.</p>');
+  // REVIEW / FAIL 시 적용 가능성 안내 문구 추가
+  if(!isPASS && confPct !== null){
+    var pctNote='<p style="margin:12px 0 0;padding:10px 14px;border-radius:8px;'
+      +'background:rgba(249,92,50,.08);font-size:13px;color:var(--ember);font-weight:600">'
+      +'⚠ 현재 확인된 정보 기준 적용 가능성은 <strong>'+confPct+'%</strong>입니다. '
+      +'세무 전문가 상담으로 나머지 요건을 확인하면 실제 적용 가능성이 높아질 수 있습니다.</p>';
+    riskHtml += pctNote;
+  }
+  $('#finalRisks').html(riskHtml||'<p style="font-size:14px;color:var(--text-m);padding:8px 0">현재 확인된 리스크가 없습니다.</p>');
 
   showAI('#aiFinal');
 }
