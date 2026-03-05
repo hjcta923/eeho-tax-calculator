@@ -1,108 +1,21 @@
 <style>
-/* ── 기본 표시 제어 ── */
 #eeho-app .eh-hd{display:none!important}
 #eeho-app .eh-step{display:none!important}
 #eeho-app .eh-step.active{display:block!important}
 #eeho-app .eh-ai{display:none!important}
 #eeho-app .eh-ai.active{display:block!important}
 #eeho-app *{box-sizing:border-box!important}
-
-/* ── AI 체크리스트 Phase ── */
-#eeho-app .eh-law-badge{display:inline-block;padding:6px 16px;background:var(--teal-xl);border:1.5px solid var(--teal);border-radius:20px;font-size:13px;font-weight:700;color:var(--teal);margin-bottom:10px}
-#eeho-app .eh-law-summary{font-size:14px;color:var(--text-s);line-height:1.6;background:var(--pearl);border-radius:10px;padding:14px 18px;margin-bottom:24px;border-left:4px solid var(--teal)}
-#eeho-app .eh-cl-item{background:var(--white);border:1.5px solid var(--gray-l);border-radius:var(--R);padding:20px 22px;margin-bottom:14px;transition:border-color .2s}
-#eeho-app .eh-cl-item.eh-cl-error{border-color:var(--red)}
-#eeho-app .eh-cl-category{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ember);margin-bottom:8px}
-#eeho-app .eh-cl-question{font-size:15px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:14px}
-#eeho-app .eh-cl-btns{display:flex;gap:10px}
-#eeho-app .eh-cl-btn{flex:1;padding:12px 8px;border:1.5px solid var(--gray);border-radius:10px;font-size:14px;font-weight:700;color:var(--text-s);background:var(--white);cursor:pointer;transition:all .2s}
-#eeho-app .eh-cl-btn:hover{border-color:var(--teal);color:var(--teal)}
-#eeho-app .eh-cl-btn[data-val="예"].selected{background:var(--teal);color:#fff;border-color:var(--teal)}
-#eeho-app .eh-cl-btn[data-val="아니오"].selected{background:var(--red);color:#fff;border-color:var(--red)}
-#eeho-app .eh-cl-btn[data-val="모름"].selected{background:var(--text-m);color:#fff;border-color:var(--text-m)}
-#eeho-app .eh-ai-step-indicator{font-size:13px;font-weight:600;color:var(--text-m);margin-left:auto}
-
-/* ── 사실관계 확인 Phase ── */
-#eeho-app .eh-fact-box{background:var(--pearl);border-radius:var(--R);padding:22px 24px;font-size:15px;line-height:1.8;color:var(--text);margin-bottom:20px;border-left:4px solid var(--teal)}
-#eeho-app .eh-req-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--gray-l)}
-#eeho-app .eh-req-row:last-child{border-bottom:none}
-#eeho-app .eh-req-icon{font-size:18px;flex-shrink:0;margin-top:1px}
-#eeho-app .eh-req-info{flex:1}
-#eeho-app .eh-req-info strong{display:block;font-size:14px;font-weight:700;margin-bottom:2px}
-#eeho-app .eh-req-info span{font-size:13px;color:var(--text-m)}
-#eeho-app .eh-req-status{font-size:13px;font-weight:700;white-space:nowrap}
-#eeho-app .eh-req-pass .eh-req-icon{color:var(--green)}
-#eeho-app .eh-req-pass .eh-req-status{color:var(--green)}
-#eeho-app .eh-req-fail .eh-req-icon{color:var(--red)}
-#eeho-app .eh-req-fail .eh-req-status{color:var(--red)}
-#eeho-app .eh-req-review .eh-req-icon{color:#F59E0B}
-#eeho-app .eh-req-review .eh-req-status{color:#F59E0B}
-#eeho-app .eh-tax-compare{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0}
-#eeho-app .eh-tax-col{text-align:center;padding:16px;border-radius:12px;background:var(--pearl)}
-#eeho-app .eh-tax-col.saving{background:linear-gradient(135deg,#E0F2E9,#B8DFCA);border:1px solid #81C784}
-#eeho-app .eh-tax-col-label{font-size:12px;color:var(--text-m);margin-bottom:6px;display:block}
-#eeho-app .eh-tax-col-amt{font-size:18px;font-weight:800;color:var(--text)}
-#eeho-app .eh-tax-col.saving .eh-tax-col-amt{color:var(--green)}
-#eeho-app .eh-conf-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:700;margin-left:8px}
-#eeho-app .eh-conf-high{background:#E0F2E9;color:var(--green)}
-#eeho-app .eh-conf-mid{background:#FFF9E6;color:#B45309}
-#eeho-app .eh-conf-low{background:#FFEBEE;color:var(--red)}
-#eeho-app .eh-confirm-actions{display:flex;gap:12px;margin-top:24px}
-#eeho-app .eh-btn-supplement{padding:16px 32px;font-size:15px;font-weight:600;color:var(--teal);border:1.5px solid var(--teal);border-radius:var(--Rs);background:var(--white);cursor:pointer;transition:all .2s;flex:1}
-#eeho-app .eh-btn-supplement:hover{background:var(--teal-xl)}
-#eeho-app .eh-btn-submit-final{padding:16px 32px;font-size:15px;font-weight:700;background:var(--ember);color:#fff;border-radius:var(--Rs);border:none;cursor:pointer;transition:all .2s;flex:1}
-#eeho-app .eh-btn-submit-final:hover{background:var(--ember-d)}
-
-/* ── 보완 Phase ── */
-#eeho-app .eh-supplement-notice{background:var(--ember-l);border:1px solid rgba(249,92,50,.2);border-radius:10px;padding:14px 18px;font-size:14px;color:var(--text-s);line-height:1.6;margin-bottom:20px}
-#eeho-app .eh-supplement-notice strong{color:var(--ember);display:block;margin-bottom:4px}
-
-/* ── 최종 리포트 Phase ── */
-#eeho-app .eh-final-law-wrap{margin-bottom:16px}
-#eeho-app .eh-final-law{display:inline-block;background:var(--teal-xl);border:1px solid var(--teal);padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;color:var(--teal)}
-
-/* ── 배지 스타일 ── */
-#eeho-app .eh-badge-review{background:linear-gradient(135deg,#FFF9E6 0%,#FDE68A 100%);border:1.5px solid #F59E0B}
-#eeho-app .eh-badge-review .eh-badge-icon{background:#F59E0B;color:#fff}
-#eeho-app .eh-badge-review .eh-badge-label{color:#92400E}
-#eeho-app .eh-badge-review .eh-badge-type{color:#B45309}
-
-/* ★ AI 적용 후 — div로 변경 후 flex 정렬 */
-#eeho-app .eh-compare-after-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
-#eeho-app #finalAfter{display:flex;align-items:center;flex-wrap:wrap;gap:8px;justify-content:center;font-size:1.45em;font-weight:800;color:var(--teal)}
-/* ★ 절세 효과 문구 */
-#eeho-app #finalTaxSaving{display:none;text-align:center;font-size:13px;color:var(--teal);font-weight:600;margin-top:4px;padding:6px 14px;background:rgba(0,68,71,.06);border-radius:20px}
-
-/* ── 로봇 로딩 애니메이션 ── */
-#eeho-app .eh-ld-robot{width:90px;height:90px;margin:0 auto 24px;display:flex;align-items:center;justify-content:center}
-@keyframes eehoBlink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(0.05)}}
-@keyframes eehoLeg{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
-@keyframes eehoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-#eeho-app .eh-robot-eye{animation:eehoBlink 3s ease-in-out infinite;transform-origin:center}
-#eeho-app .eh-robot-body{animation:eehoFloat 2s ease-in-out infinite}
-#eeho-app .eh-robot-leg-l{animation:eehoLeg 1s ease-in-out infinite;transform-origin:50% 0}
-#eeho-app .eh-robot-leg-r{animation:eehoLeg 1s ease-in-out infinite reverse;transform-origin:50% 0}
-
-/* ── 반응형 ── */
-@media(max-width:480px){
-  #eeho-app .eh-tax-compare{grid-template-columns:1fr}
-  #eeho-app .eh-confirm-actions{flex-direction:column}
-  #eeho-app #finalAfter{justify-content:center}
-}
 </style>
-
 <div id="eeho-app">
 
-<!-- ═══════════════════════════════════════════════
-     HERO
-════════════════════════════════════════════════ -->
+<!-- HERO -->
 <div class="eh-hero">
   <div class="eh-hero-badge"><span class="eh-hero-dot"></span> AI 세금 분석</div>
   <h1 class="eh-hero-title">AI 세금 계산기</h1>
   <p class="eh-hero-sub">EEHO AI의 정밀 분석으로 단순 계산부터 복잡한 시나리오까지,<br>모든 절세 포인트를 찾아드립니다.</p>
 </div>
 
-<!-- JS 호환용 구 헤더 (완전 숨김) -->
+<!-- OLD HEADER (완전 숨김 — JS 호환용) -->
 <header class="eh-header" style="display:none!important">
   <nav class="eh-progress" id="ehProgress">
     <div class="eh-pg-item active" data-s="1"><span class="eh-pg-num">01</span><span class="eh-pg-txt">.</span></div>
@@ -115,9 +28,7 @@
   </nav>
 </header>
 
-<!-- ═══════════════════════════════════════════════
-     STEP 1 — 세금 유형 선택
-════════════════════════════════════════════════ -->
+<!-- STEP 1 -->
 <div class="eh-step active" data-step="1">
   <div class="eh-card eh-card-main">
     <div class="eh-progress-bar">
@@ -125,7 +36,7 @@
       <span class="eh-pg-step-name">세금 유형</span>
     </div>
     <div class="eh-pg-track"><div class="eh-pg-fill" style="width:25%"></div></div>
-    <div style="padding:32px 36px 36px">
+    <div style="padding: 32px 36px 36px;">
       <h1 class="eh-title">어떤 세금을 계산할까요?</h1>
       <p class="eh-subtitle"><span class="eh-highlight">EEHO AI</span>가 최적의 절세 포인트를 찾아드립니다</p>
       <div class="eh-type-grid">
@@ -156,15 +67,10 @@
       </div>
     </div>
   </div>
-  <div class="eh-footer">
-    <span class="eh-footer-info">예상 소요 시간: 3분 내외</span>
-    <button class="eh-btn-primary" id="toStep2">다음 →</button>
-  </div>
+  <div class="eh-footer"><span class="eh-footer-info">예상 소요 시간: 3분 내외</span><button class="eh-btn-primary" id="toStep2">다음 →</button></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     STEP 2 — 자산 정보
-════════════════════════════════════════════════ -->
+<!-- STEP 2 -->
 <div class="eh-step" data-step="2">
   <div class="eh-card eh-card-main">
     <div class="eh-progress-bar">
@@ -172,7 +78,7 @@
       <span class="eh-pg-step-name">자산 정보</span>
     </div>
     <div class="eh-pg-track"><div class="eh-pg-fill" style="width:50%"></div></div>
-    <div style="padding:32px 36px 36px">
+    <div style="padding: 32px 36px 36px;">
       <h1 class="eh-title" id="s2Title">자산 정보를 입력하세요</h1>
       <div class="eh-asset-tabs" id="assetTabs" data-g="asset">
         <button class="eh-asset-tab active" data-v="re">부동산</button>
@@ -183,6 +89,7 @@
         <label class="eh-input-label">주소 <span class="eh-required">*</span></label>
         <input type="text" class="eh-text-input" id="inpAddress" placeholder="예: 서울시 강남구 역삼동 123-45">
       </div>
+      <!-- 부동산 유형 드롭다운 -->
       <div class="eh-extra-input" id="reTypeDropWrap">
         <label class="eh-input-label">부동산 유형</label>
         <select class="eh-select-input" id="reTypeSelect">
@@ -195,7 +102,7 @@
           <option value="rights">입주권/분양권</option>
         </select>
       </div>
-      <!-- JS 호환용 chip 컨테이너 (숨김) -->
+      <!-- 기존 chip 숨김 (JS 호환용) -->
       <div class="eh-re-types" id="reTypes" style="display:none!important"></div>
       <div class="eh-extra-input eh-hd" id="stockNameWrap">
         <label class="eh-input-label">법인명</label>
@@ -204,24 +111,16 @@
       <div class="eh-amount-section">
         <span class="eh-field-label" id="amountLabel">양도가액</span>
         <div class="eh-amount-box">
-          <div class="eh-amount-display">
-            <input type="text" class="eh-amount-input" id="inpAmount" placeholder="0" inputmode="numeric" autocomplete="off">
-            <span class="eh-amount-unit">원</span>
-          </div>
+          <div class="eh-amount-display"><input type="text" class="eh-amount-input" id="inpAmount" placeholder="0" inputmode="numeric" autocomplete="off"><span class="eh-amount-unit">원</span></div>
           <div class="eh-amount-kr" id="amountKr"></div>
         </div>
       </div>
     </div>
   </div>
-  <div class="eh-footer">
-    <button class="eh-btn-ghost" id="backStep1">← 이전</button>
-    <button class="eh-btn-primary" id="toStep3">다음 →</button>
-  </div>
+  <div class="eh-footer"><button class="eh-btn-ghost" id="backStep1">← 이전</button><button class="eh-btn-primary" id="toStep3">다음 →</button></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     STEP 3 — 상세 조건
-════════════════════════════════════════════════ -->
+<!-- STEP 3 -->
 <div class="eh-step" data-step="3">
   <div class="eh-card eh-card-main">
     <div class="eh-progress-bar">
@@ -229,59 +128,34 @@
       <span class="eh-pg-step-name">상세 조건</span>
     </div>
     <div class="eh-pg-track"><div class="eh-pg-fill" style="width:75%"></div></div>
-    <div style="padding:32px 36px 36px">
+    <div style="padding: 32px 36px 36px;">
       <h1 class="eh-title">상세 조건을 선택하세요</h1>
-      <!-- 날짜 -->
+
+      <!-- 부동산 / 주식 공통: 날짜 -->
       <div class="eh-field" id="f3Dates">
         <div class="eh-date-row">
           <div class="eh-date-field"><label>취득일</label><input type="date" class="eh-date-input" id="inpAcqDate"></div>
           <div class="eh-date-field"><label>양도일</label><input type="date" class="eh-date-input" id="inpSaleDate"></div>
         </div>
       </div>
-      <!-- 취득가액 -->
+
+      <!-- 부동산 전용 -->
       <div class="eh-field" id="f3AcqPrice">
         <span class="eh-field-label">취득가액</span>
         <div class="eh-amount-box">
-          <div class="eh-amount-display">
-            <input type="text" class="eh-amount-input eh-money" id="inpAcqPrice" placeholder="0" inputmode="numeric">
-            <span class="eh-amount-unit">원</span>
-          </div>
+          <div class="eh-amount-display"><input type="text" class="eh-amount-input eh-money" id="inpAcqPrice" placeholder="0" inputmode="numeric"><span class="eh-amount-unit">원</span></div>
           <div class="eh-amount-kr" id="acqPriceKr"></div>
         </div>
       </div>
-      <!-- 조정대상지역 -->
       <div class="eh-field" id="f3Reg">
-        <span class="eh-field-label">조정대상지역 여부
-          <button type="button" class="eh-help-btn" id="regHelpBtn" title="조정대상지역 정보 보기">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8"/><text x="10" y="14.5" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="sans-serif">?</text></svg>
-          </button>
-        </span>
+        <span class="eh-field-label">조정대상지역 여부 <button type="button" class="eh-help-btn" id="regHelpBtn" title="조정대상지역 정보 보기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8"/><text x="10" y="14.5" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="sans-serif">?</text></svg></button></span>
         <select class="eh-select-input" id="selRegulated" data-g="regulated">
           <option value="no" selected>부 (비조정지역)</option>
           <option value="yes">여 (조정대상지역)</option>
           <option value="unknown">모름</option>
         </select>
-        <!-- 조정대상지역 안내 팝업 -->
-        <div class="eh-help-popup eh-hd" id="regHelpPopup">
-          <button type="button" class="eh-help-close" id="regHelpClose">&times;</button>
-          <h4>조정대상지역 지정·해제현황 (2025.10.16 현재)</h4>
-          <div class="eh-help-scroll">
-            <table class="eh-help-table">
-              <thead><tr><th>구분</th><th>지정지역</th><th>지정일자</th></tr></thead>
-              <tbody>
-                <tr><td rowspan="2">서울특별시(25)</td><td>서초구, 강남구, 송파구, 용산구 (4개구)</td><td>2017.9.6</td></tr>
-                <tr><td>종로구, 중구, 성동구, 광진구, 동대문구, 성북구, 강북구, 도봉구, 노원구, 은평구, 서대문구, 마포구, 양천구, 강서구, 구로구, 금천구, 영등포구, 동작구, 관악구, 강동구 (21개구)</td><td>2025.10.16 (재지정)</td></tr>
-                <tr><td rowspan="5">경기도(12)</td><td>과천시, 광명시, 하남시, 의왕시</td><td rowspan="5">2025.10.16 (재지정)</td></tr>
-                <tr><td>성남시 분당구·수정구·중원구</td></tr>
-                <tr><td>수원시 영통구·장안구·팔달구</td></tr>
-                <tr><td>용인시 수지구</td></tr>
-                <tr><td>안양시 동안구</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <div class="eh-help-popup eh-hd" id="regHelpPopup"><button type="button" class="eh-help-close" id="regHelpClose">&times;</button><h4>조정대상지역 지정·해제현황 (2025.10.16 현재)</h4><div class="eh-help-scroll"><table class="eh-help-table"><thead><tr><th>구분</th><th>지정지역</th><th>지정일자</th></tr></thead><tbody><tr><td rowspan="2">서울특별시(25)</td><td>서초구, 강남구, 송파구, 용산구 (4개구)</td><td>2017.9.6</td></tr><tr><td>종로구, 중구, 성동구, 광진구, 동대문구, 성북구, 강북구, 도봉구, 노원구, 은평구, 서대문구, 마포구, 양천구, 강서구, 구로구, 금천구, 영등포구, 동작구, 관악구, 강동구 (21개구)</td><td>2025.10.16 (재지정)</td></tr><tr><td rowspan="5">경기도(12)</td><td>과천시, 광명시, 하남시, 의왕시</td><td rowspan="5">2025.10.16 (재지정)</td></tr><tr><td>성남시 분당구·수정구·중원구</td></tr><tr><td>수원시 영통구·장안구·팔달구</td></tr><tr><td>용인시 수지구</td></tr><tr><td>안양시 동안구</td></tr></tbody></table></div></div>
       </div>
-      <!-- 주택 수 -->
       <div class="eh-field" id="f3Houses">
         <span class="eh-field-label">보유 주택 수</span>
         <select class="eh-select-input" id="selHouses" data-g="houses">
@@ -292,7 +166,6 @@
           <option value="unknown">모름</option>
         </select>
       </div>
-      <!-- 실거주 기간 -->
       <div class="eh-field" id="f3Reside">
         <span class="eh-field-label">실거주 기간</span>
         <select class="eh-select-input" id="selReside" data-g="reside">
@@ -303,7 +176,6 @@
           <option value="unknown">모름</option>
         </select>
       </div>
-      <!-- 전용면적 -->
       <div class="eh-field" id="f3Area">
         <span class="eh-field-label">전용면적</span>
         <select class="eh-select-input" id="selArea" data-g="area">
@@ -312,7 +184,46 @@
           <option value="unknown">모름</option>
         </select>
       </div>
-      <!-- JS 호환용 chip 컨테이너 (숨김) -->
+
+      <!-- ★ 주식 전용 필드 (assetType=stock 일 때만 표시) -->
+      <!-- 상장/비상장 구분 -->
+      <div class="eh-field eh-hd" id="f3StockListed">
+        <span class="eh-field-label">상장 여부</span>
+        <select class="eh-select-input" id="selStockListed">
+          <option value="listed" selected>상장주식 (코스피/코스닥)</option>
+          <option value="unlisted">비상장주식</option>
+        </select>
+      </div>
+      <!-- 대주주 여부 (상장 선택 시 표시) -->
+      <div class="eh-field eh-hd" id="f3StockMajor">
+        <span class="eh-field-label">대주주 여부
+          <button type="button" class="eh-help-btn" id="stockMajorHelpBtn" title="대주주 기준 보기">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8"/><text x="10" y="14.5" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="sans-serif">?</text></svg>
+          </button>
+        </span>
+        <select class="eh-select-input" id="selStockMajor">
+          <option value="minor" selected>소액주주 (비과세)</option>
+          <option value="major">대주주 (지분율 1% 이상 또는 시가총액 10억 이상)</option>
+        </select>
+        <div class="eh-help-popup eh-hd" id="stockMajorHelpPopup">
+          <button type="button" class="eh-help-close" id="stockMajorHelpClose">&times;</button>
+          <h4>대주주 기준 (2024년 기준)</h4>
+          <p>코스피: 지분율 <strong>1% 이상</strong> 또는 시가총액 <strong>10억 원 이상</strong><br>
+          코스닥: 지분율 <strong>2% 이상</strong> 또는 시가총액 <strong>10억 원 이상</strong></p>
+          <p style="margin-top:8px;font-size:12px;color:#888;">직전 사업연도 종료일(12/31) 기준으로 판정합니다.</p>
+        </div>
+      </div>
+      <!-- 중소기업 여부 (비상장 선택 시 표시) -->
+      <div class="eh-field eh-hd" id="f3StockSme">
+        <span class="eh-field-label">법인 규모</span>
+        <select class="eh-select-input" id="selStockSme">
+          <option value="sme" selected>중소기업</option>
+          <option value="mid">중견기업</option>
+          <option value="large">일반법인 (대기업)</option>
+        </select>
+      </div>
+
+      <!-- 기존 chip 컨테이너 숨김 (JS 호환) -->
       <div style="display:none!important">
         <div class="eh-chips" data-g="regulated"></div>
         <div class="eh-chips" data-g="houses"></div>
@@ -321,15 +232,10 @@
       </div>
     </div>
   </div>
-  <div class="eh-footer">
-    <button class="eh-btn-ghost" id="backStep2">← 이전</button>
-    <button class="eh-btn-primary eh-btn-calc" id="doCalc">계산하기</button>
-  </div>
+  <div class="eh-footer"><button class="eh-btn-ghost" id="backStep2">← 이전</button><button class="eh-btn-primary eh-btn-calc" id="doCalc">계산하기</button></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     STEP 4 — 계산 결과
-════════════════════════════════════════════════ -->
+<!-- STEP 4 -->
 <div class="eh-step" data-step="4">
   <div class="eh-layout-2col eh-result-layout">
     <div class="eh-card eh-card-result">
@@ -340,24 +246,15 @@
     </div>
     <div class="eh-card eh-card-ai-cta">
       <h3 class="eh-ai-cta-title">EEHO AI로 세금 줄이기</h3>
-      <ul class="eh-ai-cta-list">
-        <li>자체 개발 AI로 맞춤형 절세 전략 분석</li>
-        <li>세부담을 가장 줄여주는 최적의 방식 추천</li>
-        <li>예상 절세액 확인</li>
-      </ul>
+      <ul class="eh-ai-cta-list"><li>자체 개발 AI로 맞춤형 절세 전략 분석</li><li>세부담을 가장 줄여주는 최적의 방식 추천</li><li>예상 절세액 확인</li></ul>
       <div class="eh-ai-cta-acc"><span>⊘</span> 정확도 <strong>99.9%</strong></div>
       <button class="eh-btn-ai eh-btn-yellow" id="startAI">EEHO AI로 분석하기</button>
     </div>
   </div>
-  <div class="eh-footer">
-    <button class="eh-btn-ghost" id="backStep3">← 이전</button>
-    <button class="eh-btn-ghost" id="resetAll">다시 계산하기</button>
-  </div>
+  <div class="eh-footer"><button class="eh-btn-ghost" id="backStep3">← 이전</button><button class="eh-btn-ghost" id="resetAll">다시 계산하기</button></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     AI Phase 1 — 상황 텍스트 입력
-════════════════════════════════════════════════ -->
+<!-- AI 5a: 텍스트 입력 -->
 <div class="eh-ai" id="aiTextPhase">
   <div class="eh-ai-header">
     <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
@@ -372,157 +269,36 @@
       <div class="eh-ex-bubble">"부모님이 2주택자인데, 송파구 소재 아파트를 저가양수 하려고 해요."</div>
       <div class="eh-ex-bubble">"작년에 이사하려고 분당 아파트를 하나 더 샀어요. 기존 송파 아파트는 언제 팔아야 하나요?"</div>
     </div>
-    <div class="eh-ta-wrap">
-      <textarea class="eh-textarea" id="aiTextInput" placeholder="상황을 자유롭게 입력해주세요..." rows="4" maxlength="500"></textarea>
-    </div>
-    <div class="eh-ta-bar">
-      <span class="eh-ta-cnt"><span id="aiTxtCnt">0</span>/500</span>
-      <button class="eh-btn-primary" id="aiSendText">분석 요청 →</button>
-    </div>
+    <div class="eh-ta-wrap"><textarea class="eh-textarea" id="aiTextInput" placeholder="상황을 자유롭게 입력해주세요..." rows="4" maxlength="500"></textarea></div>
+    <div class="eh-ta-bar"><span class="eh-ta-cnt"><span id="aiTxtCnt">0</span>/500</span><button class="eh-btn-primary" id="aiSendText">분석 요청 →</button></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     AI Phase 2 — 요건 체크리스트
-════════════════════════════════════════════════ -->
-<div class="eh-ai" id="aiChecklistPhase">
+<!-- AI 5b: 대화형 추가질문 -->
+<div class="eh-ai" id="aiConvPhase">
   <div class="eh-ai-header">
     <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
-    <div class="eh-ai-step-indicator">Step 1 of 3 · 요건 확인</div>
+    <div class="eh-ai-progress-bar"><div class="eh-ai-progress-fill" id="aiProgressFill"></div></div>
   </div>
-  <div class="eh-card eh-card-main" style="padding:32px 36px">
-    <div class="eh-law-badge" id="checklistLawName" style="display:none"></div>
-    <div class="eh-law-summary" id="checklistLawSummary" style="display:none"></div>
-    <h2 class="eh-title" style="font-size:20px;margin-bottom:6px">아래 항목을 확인해주세요</h2>
-    <p class="eh-subtitle" style="margin-bottom:20px">정확한 판단을 위해 핵심 요건을 확인합니다</p>
-    <div id="checklistQuestions"></div>
-    <button class="eh-btn-primary" style="width:100%;margin-top:8px" id="checklistSubmit">요건 확인 완료 →</button>
+  <div class="eh-card eh-card-main eh-conv-card">
+    <div class="eh-conv-chat" id="aiConvChat"></div>
+    <div class="eh-conv-input-area" id="aiConvInputArea"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     AI Phase 3 — 사실관계 정리본 확인
-════════════════════════════════════════════════ -->
-<div class="eh-ai" id="aiConfirmPhase">
-  <div class="eh-ai-header">
-    <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
-    <div class="eh-ai-step-indicator">Step 2 of 3 · 사실관계 확인</div>
-  </div>
-  <div class="eh-card eh-card-main" style="padding:32px 36px">
-    <h2 class="eh-title" style="font-size:20px;margin-bottom:6px">
-      현재 파악된 고객님의 상황입니다
-      <span id="confirmConfidence" class="eh-conf-badge"></span>
-    </h2>
-    <p class="eh-subtitle" style="margin-bottom:16px">내용이 맞으면 제출하기, 추가 설명이 필요하면 보완하기를 선택하세요</p>
-    <!-- 사실관계 요약 -->
-    <div class="eh-fact-box" id="confirmFactSummary"></div>
-    <!-- 요건 검토 결과 -->
-    <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;color:var(--teal)">📋 요건 검토 결과</h3>
-    <div id="confirmRequirements" style="margin-bottom:20px"></div>
-    <!-- 세액 비교 (데이터 있을 때만 표시) -->
-    <div class="eh-tax-compare" style="display:none">
-      <div class="eh-tax-col"><span class="eh-tax-col-label">현재 예상세액</span><div class="eh-tax-col-amt" id="confirmTaxBefore">-</div></div>
-      <div class="eh-tax-col"><span class="eh-tax-col-label">비과세 적용 후</span><div class="eh-tax-col-amt" id="confirmTaxAfter">-</div></div>
-      <div class="eh-tax-col saving"><span class="eh-tax-col-label">예상 절세액</span><div class="eh-tax-col-amt" id="confirmTaxSaving">-</div></div>
-    </div>
-    <!-- 안내 문구 -->
-    <p id="confirmGuideText" style="font-size:13px;color:var(--text-m);margin-bottom:16px;line-height:1.6">
-      위 내용이 맞으면 <strong>예상 절세액 확인하기</strong>를 눌러주세요.<br>
-      추가로 보완하고자 하는 내용이 있는 경우 <strong>보완하기</strong>를 선택해주세요.
-    </p>
-    <!-- 액션 버튼 -->
-    <div class="eh-confirm-actions" id="confirmActions">
-      <button class="eh-btn-supplement" id="supplementBtn">✏️ 보완하기</button>
-      <button class="eh-btn-submit-final" id="submitFinal">예상 절세액 확인하기 →</button>
-    </div>
-    <div style="text-align:center;margin-top:12px">
-      <button class="eh-btn-ghost eh-btn-sm" id="backToResultFromConfirm">← 결과로 돌아가기</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════
-     AI Phase 4 — 보완 입력
-════════════════════════════════════════════════ -->
-<div class="eh-ai" id="aiSupplementPhase">
-  <div class="eh-ai-header">
-    <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
-    <div class="eh-ai-step-indicator">Step 2.5 of 3 · 보완 입력</div>
-  </div>
-  <div class="eh-card eh-card-main" style="padding:32px 36px">
-    <h2 class="eh-title" style="font-size:20px;margin-bottom:6px">추가 상황을 알려주세요</h2>
-    <p class="eh-subtitle" style="margin-bottom:16px">사실관계 정리본에서 누락되거나 잘못된 내용이 있다면 자유롭게 입력해주세요</p>
-    <div class="eh-supplement-notice">
-      <strong>💡 보완하기란?</strong>
-      AI가 파악하지 못한 상황(예: 합가일, 어머니 주택 소재지 등)을 추가로 입력하면 더 정확한 분석이 가능합니다.
-    </div>
-    <div class="eh-ta-wrap">
-      <textarea class="eh-textarea" id="supplementInput" placeholder="예: 합가일이 2023년 3월이고, 어머니 주택은 경기도 과천시에 있습니다..." rows="5" maxlength="1000"></textarea>
-    </div>
-    <div class="eh-ta-bar">
-      <span class="eh-ta-cnt"><span id="supplementCnt">0</span>/1000</span>
-    </div>
-    <div style="display:flex;gap:12px;margin-top:16px">
-      <button class="eh-btn-ghost" id="backToConfirm" style="flex:1">← 사실관계로 돌아가기</button>
-      <button class="eh-btn-primary" id="supplementSubmit" style="flex:1">제출하기 →</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════
-     AI Loading — 로봇 애니메이션
-════════════════════════════════════════════════ -->
+<!-- AI Loading -->
 <div class="eh-ai" id="aiLoading">
   <div class="eh-loading">
-    <div class="eh-ld-robot">
-      <svg width="90" height="90" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- 안테나 -->
-        <line x1="45" y1="8" x2="45" y2="18" stroke="#004447" stroke-width="2.5" stroke-linecap="round"/>
-        <circle cx="45" cy="6" r="3" fill="#F95C32"/>
-        <!-- 몸통 -->
-        <g class="eh-robot-body">
-          <!-- 머리 -->
-          <rect x="22" y="18" width="46" height="34" rx="8" fill="#F7F2F0" stroke="#004447" stroke-width="2"/>
-          <!-- 왼쪽 눈 -->
-          <ellipse cx="35" cy="32" rx="5" ry="5" fill="#004447" class="eh-robot-eye"/>
-          <circle cx="37" cy="30" r="1.5" fill="white"/>
-          <!-- 오른쪽 눈 -->
-          <ellipse cx="55" cy="32" rx="5" ry="5" fill="#004447" class="eh-robot-eye"/>
-          <circle cx="57" cy="30" r="1.5" fill="white"/>
-          <!-- 입 -->
-          <path d="M37 42 Q45 47 53 42" stroke="#004447" stroke-width="2" stroke-linecap="round" fill="none"/>
-          <!-- 몸 -->
-          <rect x="28" y="54" width="34" height="20" rx="6" fill="#004447"/>
-          <rect x="34" y="59" width="8" height="4" rx="2" fill="#F95C32"/>
-          <rect x="48" y="59" width="8" height="4" rx="2" fill="#F95C32"/>
-        </g>
-        <!-- 왼쪽 다리 -->
-        <g class="eh-robot-leg-l">
-          <rect x="32" y="73" width="10" height="14" rx="5" fill="#004447"/>
-        </g>
-        <!-- 오른쪽 다리 -->
-        <g class="eh-robot-leg-r">
-          <rect x="48" y="73" width="10" height="14" rx="5" fill="#004447"/>
-        </g>
-      </svg>
-    </div>
+    <div class="eh-ld-ring"><svg width="100" height="100" viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#EDE6E2" stroke-width="4"/><circle cx="60" cy="60" r="52" fill="none" stroke="#F95C32" stroke-width="4" stroke-dasharray="327" stroke-dashoffset="327" stroke-linecap="round" class="eh-ld-anim"/></svg><div class="eh-ld-icon"><svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect x="7" y="7" width="22" height="16" rx="4" stroke="#004447" stroke-width="1.5"/><circle cx="14" cy="15" r="2" fill="#004447"/><circle cx="22" cy="15" r="2" fill="#004447"/><path d="M13 28l5-4 5 4" stroke="#004447" stroke-width="1.5" stroke-linecap="round"/></svg></div></div>
     <h3 class="eh-ld-title">AI 분석 중<span class="eh-ld-dots"></span></h3>
     <p class="eh-ld-desc">제출하신 자료를 기반으로<br>관련 세법과 판례를 분석하고 있습니다</p>
     <p class="eh-ld-wait">잠시만 기다려주세요</p>
-    <div class="eh-ld-meta">
-      <span>📋 <span id="ehLdYear"></span>년 개정세법 반영</span>
-      <span>⏱ 약 10~20초</span>
-    </div>
+    <div class="eh-ld-meta"><span>📋 <span id="ehLdYear"></span>년 개정세법 반영</span><span>⏱ 약 10~15초</span></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════
-     AI Phase 5 — 최종 리포트
-     ★ #finalAfter → <div> (confidence_pct 배지 innerHTML 삽입용)
-     ★ #finalTaxSaving → 절세 효과 문구
-════════════════════════════════════════════════ -->
+<!-- AI 6: 최종 결과 -->
 <div class="eh-ai" id="aiFinal">
-  <!-- 결과 배지 -->
   <div class="eh-final-header">
     <div id="finalResultBadge" class="eh-result-badge eh-badge-pass">
       <span class="eh-badge-icon" id="finalBadgeIcon">✓</span>
@@ -532,61 +308,20 @@
       </div>
     </div>
   </div>
-
-  <!-- ★ 세액 비교 카드 -->
   <div class="eh-card eh-card-compare">
     <div class="eh-compare-row">
-      <!-- AI 적용 전 -->
-      <div class="eh-compare-before">
-        <span class="eh-compare-label">AI 적용 전</span>
-        <span class="eh-compare-amt strikethrough" id="finalBefore">₩0</span>
-      </div>
-      <!-- ★ AI 적용 후 — div로 변경 (배지 포함 innerHTML 삽입) -->
-      <div class="eh-compare-after eh-compare-after-wrap">
-        <span class="eh-compare-label">AI 적용 후</span>
-        <div id="finalAfter">₩0</div>
-      </div>
+      <div class="eh-compare-before"><span class="eh-compare-label">AI 적용 전</span><span class="eh-compare-amt strikethrough" id="finalBefore">₩0</span></div>
+      <div class="eh-compare-after"><span class="eh-compare-label">AI 적용 후</span><span class="eh-compare-amt highlight" id="finalAfter">₩0</span></div>
     </div>
-    <!-- ★ 절세 효과 문구 (JS가 show/hide) -->
-    <p id="finalTaxSaving"></p>
   </div>
-
-  <!-- 판단 근거 -->
   <div class="eh-final-details">
-    <div class="eh-card eh-card-breakdown">
-      <h3>📋 판단 근거</h3>
-      <div id="finalDetails" class="eh-details-text"></div>
-      <!-- 적용 법령 배지 -->
-      <div class="eh-final-law-wrap" style="margin-top:16px;display:none" id="finalLawWrap">
-        <span class="eh-final-law" id="finalAppliedLaw"></span>
-      </div>
-      <!-- 법령 요약 -->
-      <div id="finalLawSummaryWrap" style="font-size:13px;color:var(--text-m);line-height:1.6;background:var(--pearl);border-radius:8px;padding:12px 16px;margin-top:10px;border-left:3px solid var(--teal);display:none">
-        <span id="finalLawSummary"></span>
-      </div>
-    </div>
+    <div class="eh-card eh-card-breakdown"><h3>📋 상세 분석</h3><div id="finalDetails" class="eh-details-text"></div></div>
   </div>
-
-  <!-- 리스크 안내 -->
-  <div class="eh-card eh-card-risk">
-    <h3>⚠ 리스크 안내</h3>
-    <div id="finalRisks" class="eh-risk-list"></div>
-  </div>
-
-  <!-- 면책 안내 -->
-  <div class="eh-card eh-card-notice">
-    <div class="eh-notice-icon">📋</div>
-    <div class="eh-notice-text">
-      <strong>세무사 검토 안내</strong>
-      <p>위 분석은 AI가 세법 데이터를 기반으로 산출한 예상 결과이며, 실제 신고 시에는 반드시 세무 전문가의 검토가 필요합니다.</p>
-    </div>
-  </div>
-
-  <!-- 액션 버튼 -->
+  <div class="eh-card eh-card-risk"><h3>⚠ 리스크 안내</h3><div id="finalRisks" class="eh-risk-list"></div></div>
+  <div class="eh-card eh-card-notice"><div class="eh-notice-icon">📋</div><div class="eh-notice-text"><strong>세무사 검토 안내</strong><p>위 분석은 AI가 세법 데이터를 기반으로 산출한 예상 결과이며, 실제 신고 시에는 반드시 세무 전문가의 검토가 필요합니다.</p></div></div>
   <div class="eh-final-actions">
     <a href="https://pf.kakao.com/_xjKxoG/chat" target="_blank" class="eh-btn-primary eh-btn-consult">세무 전문가 상담</a>
     <button class="eh-btn-outline" id="backToResult">← 결과로 돌아가기</button>
   </div>
 </div>
-
-</div><!-- /#eeho-app -->
+</div>
