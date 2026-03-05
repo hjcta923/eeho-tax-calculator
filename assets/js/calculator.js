@@ -20,6 +20,8 @@ var formData = {
   stockListed: 'listed',   // listed | unlisted
   stockMajor:  'minor',    // minor | major        (상장 전용)
   stockSme:    'sme',      // sme | mid | large    (비상장 전용)
+  // ★ v7.2: 상속세 전용 필드
+  hasSpouse:   'yes',      // yes | no  (배우자 유무)
 };
 
 var aiState = {
@@ -39,7 +41,8 @@ function generateSessionId() {
 
 /* --- 맵 정의 --- */
 var MAP_TAX_CATEGORY = {
-  'cgt': '양도소득세', 'acq': '취득세', 'prop': '재산세/종합부동산세', 'gift': '상속·증여'
+  'cgt': '양도소득세', 'acq': '취득세', 'prop': '재산세/종합부동산세',
+  'gift': '증여세', 'inherit': '상속세'
 };
 var MAP_TYPE_ASSET = {
   'apt': '아파트', 'villa': '빌라', 'officetel': '오피스텔',
@@ -102,7 +105,11 @@ function buildPayload(freeText) {
       case '농어촌특별세': calcData.estimated_rural_tax   = item.amount; break;
       case '재산세':       calcData.estimated_property_tax = item.amount; break;
       case '종합부동산세': calcData.estimated_comprehensive_tax = item.amount; break;
+      case '지방교육세(재산세)': calcData.estimated_prop_edu_tax = item.amount; break;
+      case '농어촌특별세(종부세)': calcData.estimated_jonbu_rural_tax = item.amount; break;
+      case '도시지역분':   calcData.estimated_city_tax = item.amount; break;
       case '증여세':       calcData.estimated_gift_tax    = item.amount; break;
+      case '상속세':       calcData.estimated_inherit_tax = item.amount; break;
       case '신고세액공제': calcData.estimated_filing_deduction = item.amount; break;
     }
   });
@@ -120,6 +127,10 @@ function buildPayload(freeText) {
     } else {
       conditionInfo.stock_corp_size = ({sme:'중소기업',mid:'중견기업',large:'일반법인'})[formData.stockSme] || '중소기업';
     }
+  }
+  // ★ 상속세: 배우자 유무 정보 추가
+  if (formData.taxType === 'inherit') {
+    conditionInfo.has_spouse = formData.hasSpouse === 'yes' ? '여' : '부';
   }
 
   return {
@@ -196,8 +207,10 @@ $('#toStep2').on('click',function(){ configStep2(); goStep(2); });
    ================================================================ */
 function configStep2(){
   var t=formData.taxType;
-  var labels={cgt:'양도가액',acq:'취득가액',prop:'공시가격',gift:'증여가액'};
+  var labels={cgt:'양도가액',acq:'취득가액',prop:'공시가격',gift:'증여가액',inherit:'상속재산가액'};
   $('#amountLabel').text(labels[t]||'금액');
+  // ★ 상속세 전용 필드 기본 숨김
+  $('#f3Spouse').addClass('eh-hd');
   if(t==='cgt'){
     $('#assetTabs').show(); $('#tabStock2').removeClass('dis').show(); $('#tabCash2').addClass('dis');
     $('#s2Title').text('자산과 금액을 입력하세요');
@@ -208,6 +221,9 @@ function configStep2(){
   } else if(t==='gift'){
     $('#assetTabs').show(); $('#tabStock2,#tabCash2').removeClass('dis').show();
     $('#s2Title').text('증여 재산과 금액을 입력하세요');
+  } else if(t==='inherit'){
+    $('#assetTabs').show(); $('#tabStock2,#tabCash2').removeClass('dis').show();
+    $('#s2Title').text('상속 재산의 총 가액을 입력하세요');
   }
   updateReTypes();
 }
@@ -277,6 +293,8 @@ function configStep3(){
   var t=formData.taxType, asset=formData.assetType;
   // 주식 전용 필드 기본 숨김
   $('#f3StockListed,#f3StockMajor,#f3StockSme').addClass('eh-hd');
+  // ★ 상속세 전용 필드 기본 숨김
+  $('#f3Spouse').addClass('eh-hd');
   if(t==='cgt'){
     if(asset==='stock'){
       $('#f3Dates,#f3AcqPrice').show();
@@ -294,6 +312,10 @@ function configStep3(){
   } else if(t==='gift'){
     $('#f3Dates,#f3AcqPrice,#f3Houses,#f3Reside,#f3Area').hide();
     $('#f3Reg').show();
+  } else if(t==='inherit'){
+    // 상속세: 배우자 유무만 노출, 나머지 숨김
+    $('#f3Dates,#f3AcqPrice,#f3Reg,#f3Houses,#f3Reside,#f3Area').hide();
+    $('#f3Spouse').removeClass('eh-hd');
   }
 }
 
@@ -312,6 +334,9 @@ $('#selStockSme').on('change',    function(){ formData.stockSme=$(this).val(); }
 
 $('#stockMajorHelpBtn').on('click',   function(e){ e.preventDefault(); $('#stockMajorHelpPopup').toggleClass('eh-hd'); });
 $('#stockMajorHelpClose').on('click', function(){ $('#stockMajorHelpPopup').addClass('eh-hd'); });
+
+/* ★ v7.2: 상속세 — 배우자 유무 선택 */
+$('#selSpouse').on('change', function(){ formData.hasSpouse=$(this).val(); });
 
 A.on('click','.eh-chips .eh-chip',function(){
   var p=$(this).closest('.eh-chips'); p.find('.eh-chip').removeClass('active'); $(this).addClass('active');
@@ -349,7 +374,7 @@ $('#doCalc').on('click',function(){
 });
 
 /* ================================================================
-   ★ [v7.1] 누진세율 헬퍼 (소득세법 §55, 2024년 기준)
+   ★ 누진세율 헬퍼 (소득세법 §55, 2024년 기준)
    ================================================================ */
 function calcProgressiveTax(base) {
   if(base<=0)              return 0;
@@ -364,15 +389,18 @@ function calcProgressiveTax(base) {
 }
 
 /* ================================================================
-   ★ [v7.1] calculateTax()
+   ★ [v7.2] calculateTax()
    ──────────────────────────────────────────────────────────────────
-   [CGT - 주식] 신규 (소득세법 §104①11호, 2024년 기준)
-     · 상장 소액주주  → 비과세
-     · 상장 대주주    → 1년 미만 30% / 1년 이상 20%(3억 이하)·25%(초과)
-     · 비상장 중소기업 → 10%
-     · 비상장 중견/일반 → 20%
-     · 기본공제 250만원, 지방소득세 10% 공통 적용
-   [CGT - 부동산] v7.0 유지
+   [v7.2 수정사항 — 부동산 CGT]
+     수정 1: 1세대 1주택 장특공제 보유기간 공제율 0.08 → 0.04
+             (소득세법 시행령 §159조의4)
+             보유기간 연 4% 최대40% + 거주기간 연 4% 최대40% = 최대 80%
+     수정 2: 단기양도 세율 자산유형별 분기
+             (소득세법 §104①)
+             주택/입주권/분양권: 1년 미만 70%, 1~2년 60%
+             토지/상가/건물:     1년 미만 50%, 1~2년 40%
+
+   [주식 CGT] v7.1 유지
    [취득세·재산세·증여세] 다음 버전에서 순차 수정 예정
    ================================================================ */
 function calculateTax(fd) {
@@ -380,7 +408,7 @@ function calculateTax(fd) {
 
   if (t === 'cgt') {
 
-    /* ── 주식 CGT ── */
+    /* ── 주식 CGT (v7.1) ── */
     if (fd.assetType === 'stock') {
       var gain = Math.max(0, amt - (fd.acqPrice || 0));
       var holdMonths = 0;
@@ -392,7 +420,6 @@ function calculateTax(fd) {
 
       if (fd.stockListed === 'listed') {
         if (fd.stockMajor !== 'major') {
-          // 소액주주: 장내 비과세
           console.log('[EEHO STOCK] 상장 소액주주 → 비과세');
           return {
             items: [
@@ -403,18 +430,15 @@ function calculateTax(fd) {
             total: 0
           };
         }
-        // 대주주
         var taxBase = Math.max(0, gain - 2500000);
         if (holdMonths < 12) {
-          yangdoTax = Math.round(taxBase * 0.30);  // 1년 미만 30%
+          yangdoTax = Math.round(taxBase * 0.30);
         } else {
-          // 1년 이상: 3억 이하 20%, 초과분 25%
           yangdoTax = taxBase <= 300000000
             ? Math.round(taxBase * 0.20)
             : Math.round(300000000 * 0.20 + (taxBase - 300000000) * 0.25);
         }
       } else {
-        // 비상장
         var taxBase = Math.max(0, gain - 2500000);
         var rate = (fd.stockSme === 'sme') ? 0.10 : 0.20;
         yangdoTax = Math.round(taxBase * rate);
@@ -430,7 +454,7 @@ function calculateTax(fd) {
         yangdoTax, localTax, total
       });
 
-    /* ── 부동산 CGT (v7.0) ── */
+    /* ── 부동산 CGT (v7.2) ── */
     } else {
       var gain = Math.max(0, amt - (fd.acqPrice || 0));
       var holdMonths = 0;
@@ -442,57 +466,235 @@ function calculateTax(fd) {
       var isUnder1yr = holdMonths > 0 && holdMonths < 12;
       var is1to2yr   = holdMonths >= 12 && holdMonths < 24;
 
+      // ★ [v7.2 수정 2] 주거용 vs 비주거용 자산 판별
+      var isHousing = (fd.reSubType === 'apt' || fd.reSubType === 'villa' ||
+                       fd.reSubType === 'officetel' || fd.reSubType === 'rights');
+
       var houseNum = 1;
       if(fd.houses==='2') houseNum=2;
       else if(fd.houses==='3'||fd.houses==='multi') houseNum=3;
       var isJungKwa      = (fd.regulated==='yes') && (houseNum>=2);
       var jungKwaAddRate = (houseNum===2)?0.20:(houseNum>=3?0.30:0);
 
+      // 장기보유특별공제 (3년 이상, 단기·중과 제외)
       var ltdRate = 0;
       if (!isJungKwa && !isUnder1yr && !is1to2yr && holdFullYears >= 3) {
         if (fd.houses === '1') {
+          // ★ [v7.2 수정 1] 1세대 1주택: 보유 연 4%(최대40%) + 거주 연 4%(최대40%) = 최대 80%
           var resideYrs = fd.reside==='2'?2 : fd.reside==='5'?5 : fd.reside==='10'?10 : 0;
-          ltdRate = Math.min(0.80, Math.min(holdFullYears,10)*0.08 + Math.min(resideYrs,10)*0.04);
+          ltdRate = Math.min(0.80, Math.min(holdFullYears,10)*0.04 + Math.min(resideYrs,10)*0.04);
         } else {
+          // 다주택/비주거: 연 2%, 최대 30%
           ltdRate = Math.min(0.30, holdFullYears * 0.02);
         }
       }
 
       var ltdAmt    = Math.round(gain * ltdRate);
       var taxBase   = Math.max(0, gain - ltdAmt - 2500000);
-      var yangdoTax = isUnder1yr  ? Math.round(taxBase*0.70)
-                    : is1to2yr    ? Math.round(taxBase*0.60)
-                    : isJungKwa   ? Math.round(calcProgressiveTax(taxBase) + taxBase*jungKwaAddRate)
-                    :                calcProgressiveTax(taxBase);
+
+      // ★ [v7.2 수정 2] 단기양도 세율: 주거용 vs 비주거용 분기
+      var yangdoTax;
+      if (isUnder1yr) {
+        yangdoTax = isHousing ? Math.round(taxBase * 0.70) : Math.round(taxBase * 0.50);
+      } else if (is1to2yr) {
+        yangdoTax = isHousing ? Math.round(taxBase * 0.60) : Math.round(taxBase * 0.40);
+      } else if (isJungKwa) {
+        yangdoTax = Math.round(calcProgressiveTax(taxBase) + taxBase * jungKwaAddRate);
+      } else {
+        yangdoTax = calcProgressiveTax(taxBase);
+      }
+
       var localTax = Math.round(yangdoTax * 0.10);
       total = yangdoTax + localTax;
       items = [{ name:'양도소득세', amount:yangdoTax }, { name:'지방소득세', amount:localTax }];
 
-      console.log('[EEHO CGT RE]', {
+      console.log('[EEHO CGT RE v7.2]', {
         gain, holdMonths, holdFullYears, isUnder1yr, is1to2yr,
-        isJungKwa, ltdRate, taxBase, yangdoTax, localTax, total
+        isHousing, isJungKwa, ltdRate, taxBase, yangdoTax, localTax, total
       });
     }
 
-  /* ── 취득세 — v7.2에서 수정 예정 ── */
+  /* ══════════════════════════════════════════════════════════════
+     ★ [v7.2] 취득세 (지방세법 §11, 2024년 기준)
+     ──────────────────────────────────────────────────────────────
+     수정 1: 1주택 세율 1% 단일 → 가액별 1~3% (6억/9억 구간)
+     수정 2: 비조정 2주택 8% → 일반세율 (1~3%)
+     수정 3: 조정 2주택 10% → 8%
+     수정 4: 조정 3주택+ 14% → 12%, 비조정 3주택+ → 8%
+     수정 5: 농어촌특별세 무조건 부과 → 85㎡ 초과만 (취득가액×0.2%)
+     ══════════════════════════════════════════════════════════════ */
   } else if (t==='acq') {
-    var r=fd.houses==='1'?0.01:(fd.houses==='2'?0.08:0.12);
-    if(fd.regulated==='yes'&&fd.houses!=='1') r+=0.02;
-    var a=Math.round(amt*r),e=Math.round(a*0.1),ru=Math.round(a*0.02);
-    items=[{name:'취득세',amount:a},{name:'지방교육세',amount:e},{name:'농어촌특별세',amount:ru}];
-    total=a+e+ru;
 
-  /* ── 재산세/종부세 — v7.2에서 수정 예정 ── */
+    // 일반 주택 취득세율: 6억 이하 1%, 6~9억 선형보간, 9억 초과 3%
+    function normalAcqRate(price) {
+      if (price <= 600000000) return 0.01;
+      if (price <= 900000000) return (price / 100000000 * 2 / 3 - 3) / 100;
+      return 0.03;
+    }
+
+    var houseNum = fd.houses==='1'?1 : fd.houses==='2'?2 : fd.houses==='3'?3 : fd.houses==='multi'?4 : 1;
+    var isReg = (fd.regulated === 'yes');
+    var rate;
+
+    if (houseNum === 1) {
+      // 1주택: 조정/비조정 동일, 가액별 1~3%
+      rate = normalAcqRate(amt);
+    } else if (houseNum === 2) {
+      // 2주택: 조정 8%, 비조정 일반세율
+      rate = isReg ? 0.08 : normalAcqRate(amt);
+    } else {
+      // 3주택 이상: 조정 12%, 비조정 8%
+      rate = isReg ? 0.12 : 0.08;
+    }
+
+    var acqTax = Math.round(amt * rate);
+    var eduTax = Math.round(acqTax * 0.1);  // 지방교육세 = 취득세 × 10%
+
+    // ★ 농어촌특별세: 85㎡ 초과만 부과 (취득가액 × 0.2%)
+    var ruralTax = 0;
+    if (fd.area === 'over85') {
+      ruralTax = Math.round(amt * 0.002);
+    }
+
+    items = [{name:'취득세', amount:acqTax}, {name:'지방교육세', amount:eduTax}];
+    if (ruralTax > 0) {
+      items.push({name:'농어촌특별세', amount:ruralTax});
+    }
+    total = acqTax + eduTax + ruralTax;
+
+    console.log('[EEHO ACQ v7.2]', {
+      amt:amt, houseNum:houseNum, isReg:isReg, rate:rate,
+      acqTax:acqTax, eduTax:eduTax, ruralTax:ruralTax, area:fd.area, total:total
+    });
+
+  /* ══════════════════════════════════════════════════════════════
+     ★ [v7.2] 재산세 / 종합부동산세 (지방세법 §111, 종부세법 §9)
+     ──────────────────────────────────────────────────────────────
+     수정 1: 재산세 공정시장가액비율(60%) + 구간별 세율 적용
+     수정 2: 종부세 기본공제 주택수별 분기 (1주택 12억 / 다주택 9억)
+     수정 3: 종부세 0.5% 단일 → 누진세율 7단계 적용
+     수정 4: 재산세 지방교육세(재산세×20%) 추가
+     수정 5: 재산세 도시지역분(과표×0.14%) 추가
+     ══════════════════════════════════════════════════════════════ */
   } else if (t==='prop') {
-    var b=Math.max(0,amt-1200000000)*0.6, p=Math.round(b*0.005), ep=Math.round(p*0.2);
-    items=[{name:'재산세',amount:Math.round(amt*0.001)},{name:'종합부동산세',amount:p},{name:'지방교육세',amount:ep}];
-    total=Math.round(amt*0.001)+p+ep;
 
-  /* ── 증여세 — v7.3에서 수정 예정 ── */
-  } else {
-    var tx=Math.max(0,amt-50000000), g=Math.round(tx*0.2), d=-Math.round(g*0.03), eg=Math.round(g*0.1);
-    items=[{name:'증여세',amount:g},{name:'신고세액공제',amount:d},{name:'지방교육세',amount:eg}];
-    total=g+d+eg;
+    // ── 재산세 ──
+    var fairRatio = 0.60;  // 공정시장가액비율 60%
+    var propTaxBase = Math.round(amt * fairRatio);
+
+    // 재산세 구간별 세율 (지방세법 §111)
+    function calcPropertyTax(base) {
+      if (base <= 0)          return 0;
+      if (base <= 60000000)   return Math.round(base * 0.001);
+      if (base <= 150000000)  return Math.round(base * 0.0015 - 30000);
+      if (base <= 300000000)  return Math.round(base * 0.0025 - 180000);
+                              return Math.round(base * 0.004  - 630000);
+    }
+
+    var propTax    = calcPropertyTax(propTaxBase);
+    var propEduTax = Math.round(propTax * 0.20);       // 재산세 지방교육세 20%
+    var cityTax    = Math.round(propTaxBase * 0.0014);  // 도시지역분 0.14%
+
+    // ── 종합부동산세 ──
+    var houseNum = fd.houses==='1'?1 : fd.houses==='2'?2 : fd.houses==='3'?3 : fd.houses==='multi'?4 : 1;
+    var jonbuExemption = (houseNum === 1) ? 1200000000 : 900000000;
+    var jonbuTaxBase = Math.round(Math.max(0, amt - jonbuExemption) * fairRatio);
+
+    // 종부세 누진세율 (종부세법 §9, 2023년 이후 일반/중과 동일)
+    function calcJonbuTax(base) {
+      if (base <= 0)            return 0;
+      if (base <= 300000000)    return Math.round(base * 0.005);
+      if (base <= 600000000)    return Math.round(base * 0.007  - 600000);
+      if (base <= 1200000000)   return Math.round(base * 0.010  - 2400000);
+      if (base <= 2500000000)   return Math.round(base * 0.013  - 6000000);
+      if (base <= 5000000000)   return Math.round(base * 0.015  - 11000000);
+      if (base <= 9400000000)   return Math.round(base * 0.020  - 36000000);
+                                return Math.round(base * 0.027  - 101800000);
+    }
+
+    var jonbuTax    = calcJonbuTax(jonbuTaxBase);
+    var jonbuEduTax = Math.round(jonbuTax * 0.20);  // 종부세 농어촌특별세 20%
+
+    items = [
+      {name:'재산세',       amount:propTax},
+      {name:'지방교육세(재산세)', amount:propEduTax},
+      {name:'도시지역분',   amount:cityTax},
+      {name:'종합부동산세', amount:jonbuTax},
+      {name:'농어촌특별세(종부세)', amount:jonbuEduTax}
+    ];
+    total = propTax + propEduTax + cityTax + jonbuTax + jonbuEduTax;
+
+    console.log('[EEHO PROP v7.2]', {
+      amt:amt, propTaxBase:propTaxBase, propTax:propTax, propEduTax:propEduTax, cityTax:cityTax,
+      houseNum:houseNum, jonbuExemption:jonbuExemption, jonbuTaxBase:jonbuTaxBase,
+      jonbuTax:jonbuTax, jonbuEduTax:jonbuEduTax, total:total
+    });
+
+  /* ══════════════════════════════════════════════════════════════
+     ★ [v7.2] 증여세 (상속세 및 증여세법 §56)
+     ══════════════════════════════════════════════════════════════ */
+  } else if (t==='gift') {
+    // 증여공제 (현재 UI에 관계 선택 없으므로 성인 직계존비속 5천만 기본)
+    var giftExemption = 50000000;
+    var taxBase = Math.max(0, amt - giftExemption);
+
+    // 증여세 누진세율 (상증법 §56)
+    function calcGiftTax(base) {
+      if (base <= 0)           return 0;
+      if (base <= 100000000)   return Math.round(base * 0.10);
+      if (base <= 500000000)   return Math.round(base * 0.20 - 10000000);
+      if (base <= 1000000000)  return Math.round(base * 0.30 - 60000000);
+      if (base <= 3000000000)  return Math.round(base * 0.40 - 160000000);
+                               return Math.round(base * 0.50 - 460000000);
+    }
+
+    var giftTax = calcGiftTax(taxBase);
+    items = [{name:'증여세', amount:giftTax}];
+    total = giftTax;
+
+    console.log('[EEHO GIFT v7.2]', {
+      amt:amt, giftExemption:giftExemption, taxBase:taxBase, giftTax:giftTax
+    });
+
+  /* ══════════════════════════════════════════════════════════════
+     ★ [v7.2] 상속세 신규 (상속세 및 증여세법 §18~§26)
+     ──────────────────────────────────────────────────────────────
+     공제 구조:
+       일괄공제 5억 (기초2억+인적 vs 일괄 중 큰 금액 → 간이 계산기는 일괄 5억)
+       + 배우자 상속공제: 배우자 有 → 최소 5억 추가
+       ∴ 배우자 없으면 총 공제 5억, 배우자 있으면 총 공제 10억
+     세율: 증여세와 동일 10~50% 누진 5단계
+     ══════════════════════════════════════════════════════════════ */
+  } else if (t==='inherit') {
+    // 상속세 누진세율 (상증법 §26, 증여세와 동일 구간)
+    function calcInheritTax(base) {
+      if (base <= 0)           return 0;
+      if (base <= 100000000)   return Math.round(base * 0.10);
+      if (base <= 500000000)   return Math.round(base * 0.20 - 10000000);
+      if (base <= 1000000000)  return Math.round(base * 0.30 - 60000000);
+      if (base <= 3000000000)  return Math.round(base * 0.40 - 160000000);
+                               return Math.round(base * 0.50 - 460000000);
+    }
+
+    // 일괄공제 5억
+    var bulkDeduction = 500000000;
+    // 배우자 상속공제: 배우자 있으면 최소 5억 추가
+    var spouseDeduction = (fd.hasSpouse === 'yes') ? 500000000 : 0;
+    var totalDeduction = bulkDeduction + spouseDeduction;
+
+    var taxBase = Math.max(0, amt - totalDeduction);
+    var inheritTax = calcInheritTax(taxBase);
+
+    items = [{name:'상속세', amount:inheritTax}];
+    if (spouseDeduction > 0) {
+      items.push({name:'※ 배우자 상속공제 5억 적용', amount:0});
+    }
+    total = inheritTax;
+
+    console.log('[EEHO INHERIT v7.2]', {
+      amt:amt, bulkDeduction:bulkDeduction, spouseDeduction:spouseDeduction,
+      totalDeduction:totalDeduction, taxBase:taxBase, inheritTax:inheritTax
+    });
   }
 
   if(total<0) total=0;
@@ -520,7 +722,8 @@ $('#resetAll').on('click',function(){
     amount:0,address:'',stockName:'',
     regulated:'no',houses:'1',saleDate:'',acqDate:'',
     reside:'2',area:'under85',acqPrice:0,
-    stockListed:'listed',stockMajor:'minor',stockSme:'sme'
+    stockListed:'listed',stockMajor:'minor',stockSme:'sme',
+    hasSpouse:'yes'
   };
   aiState={payload:{},userText:'',callCount:0,sessionId:''};
   currentEstimatedTax=0;
@@ -533,6 +736,7 @@ $('#resetAll').on('click',function(){
   $('#reTypeSelect').val('apt'); $('#selRegulated').val('no'); $('#selHouses').val('1');
   $('#selReside').val('2'); $('#selArea').val('under85');
   $('#selStockListed').val('listed'); $('#selStockMajor').val('minor'); $('#selStockSme').val('sme');
+  $('#selSpouse').val('yes');
   $('#amountKr,#acqPriceKr').text('');
   A.find('[data-g="houses"] .eh-chip').removeClass('active').first().addClass('active');
   A.find('[data-g="regulated"] .eh-chip').removeClass('active').eq(1).addClass('active');
