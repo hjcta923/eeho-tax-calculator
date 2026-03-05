@@ -28,7 +28,11 @@
   </nav>
 </header>
 
-<!-- STEP 1 -->
+<!-- ================================================================
+     STEP 1: 세목 선택
+     ★ v7.2: 상속세 카드 신설, 증여세 분리, 카드 순서 재배치
+     순서: 양도소득세 → 상속세 → 증여세 → 취득세 → 재산세/종부세
+     ================================================================ -->
 <div class="eh-step active" data-step="1">
   <div class="eh-card eh-card-main">
     <div class="eh-progress-bar">
@@ -40,30 +44,47 @@
       <h1 class="eh-title">어떤 세금을 계산할까요?</h1>
       <p class="eh-subtitle"><span class="eh-highlight">EEHO AI</span>가 최적의 절세 포인트를 찾아드립니다</p>
       <div class="eh-type-grid">
+
+        <!-- 1. 양도소득세 -->
         <button class="eh-type-card active" data-type="cgt">
           <span class="eh-type-check">✓</span>
           <div class="eh-type-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 40V20L20 10l12 10v20"/><path d="M28 40V28h-8v12"/><path d="M32 16l8 0m-4-4v8"/></svg></div>
           <span class="eh-type-name">양도소득세</span>
           <span class="eh-type-desc">부동산 등 매매 시 발생하는 소득에 대한 세금</span>
         </button>
+
+        <!-- 2. 상속세 (★ 신규) -->
+        <button class="eh-type-card" data-type="inherit">
+          <span class="eh-type-check">✓</span>
+          <div class="eh-type-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6v10"/><path d="M18 16h12"/><path d="M14 16c0 0-4 8-4 16h28c0-8-4-16-4-16"/><path d="M20 26h8m-6 5h4"/></svg></div>
+          <span class="eh-type-name">상속세</span>
+          <span class="eh-type-desc">사망으로 인해 재산을 이전받을 때 부과되는 세금</span>
+        </button>
+
+        <!-- 3. 증여세 -->
+        <button class="eh-type-card" data-type="gift">
+          <span class="eh-type-check">✓</span>
+          <div class="eh-type-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24c-4 0-6-4-2-6s6 2 12 6c6-4 10-8 12-6s2 6-2 6"/><rect x="10" y="24" width="28" height="16" rx="2"/><path d="M24 24v16"/></svg></div>
+          <span class="eh-type-name">증여세</span>
+          <span class="eh-type-desc">생전에 재산을 무상으로 이전받을 때 발생하는 세금</span>
+        </button>
+
+        <!-- 4. 취득세 -->
         <button class="eh-type-card" data-type="acq">
           <span class="eh-type-check">✓</span>
           <div class="eh-type-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="12" width="32" height="28" rx="2"/><path d="M8 20h32"/><path d="M16 8v8m16-8v8"/><path d="M18 28h12m-12 6h8"/></svg></div>
           <span class="eh-type-name">취득세</span>
           <span class="eh-type-desc">부동산 등 자산 취득 시 납부하는 세금</span>
         </button>
+
+        <!-- 5. 재산세/종합부동산세 -->
         <button class="eh-type-card" data-type="prop">
           <span class="eh-type-check">✓</span>
           <div class="eh-type-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="18" width="28" height="22" rx="2"/><path d="M10 24h28"/><path d="M18 18V10h12v8"/><path d="M18 30h4v10h-4zm8 0h4v10h-4z"/></svg></div>
           <span class="eh-type-name">재산세/종합부동산세</span>
           <span class="eh-type-desc">매년 보유한 부동산에 대해 부과되는 세금</span>
         </button>
-        <button class="eh-type-card" data-type="gift">
-          <span class="eh-type-check">✓</span>
-          <div class="eh-type-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24c-4 0-6-4-2-6s6 2 12 6c6-4 10-8 12-6s2 6-2 6"/><rect x="10" y="24" width="28" height="16" rx="2"/><path d="M24 24v16"/></svg></div>
-          <span class="eh-type-name">상속·증여</span>
-          <span class="eh-type-desc">재산을 무상으로 이전받을 때 발생하는 세금</span>
-        </button>
+
       </div>
     </div>
   </div>
@@ -120,7 +141,11 @@
   <div class="eh-footer"><button class="eh-btn-ghost" id="backStep1">← 이전</button><button class="eh-btn-primary" id="toStep3">다음 →</button></div>
 </div>
 
-<!-- STEP 3 -->
+<!-- ================================================================
+     STEP 3: 상세 조건
+     ★ v7.2: 상속세 배우자 유무 필드(#f3Spouse) 추가
+     ★ 버그 수정: 주식 전용 필드 중복 선언 제거 (1벌만 유지)
+     ================================================================ -->
 <div class="eh-step" data-step="3">
   <div class="eh-card eh-card-main">
     <div class="eh-progress-bar">
@@ -139,7 +164,7 @@
         </div>
       </div>
 
-      <!-- 부동산 전용 -->
+      <!-- 부동산 전용: 취득가액 -->
       <div class="eh-field" id="f3AcqPrice">
         <span class="eh-field-label">취득가액</span>
         <div class="eh-amount-box">
@@ -147,6 +172,8 @@
           <div class="eh-amount-kr" id="acqPriceKr"></div>
         </div>
       </div>
+
+      <!-- 조정대상지역 -->
       <div class="eh-field" id="f3Reg">
         <span class="eh-field-label">조정대상지역 여부 <button type="button" class="eh-help-btn" id="regHelpBtn" title="조정대상지역 정보 보기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8"/><text x="10" y="14.5" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="sans-serif">?</text></svg></button></span>
         <select class="eh-select-input" id="selRegulated" data-g="regulated">
@@ -156,6 +183,8 @@
         </select>
         <div class="eh-help-popup eh-hd" id="regHelpPopup"><button type="button" class="eh-help-close" id="regHelpClose">&times;</button><h4>조정대상지역 지정·해제현황 (2025.10.16 현재)</h4><div class="eh-help-scroll"><table class="eh-help-table"><thead><tr><th>구분</th><th>지정지역</th><th>지정일자</th></tr></thead><tbody><tr><td rowspan="2">서울특별시(25)</td><td>서초구, 강남구, 송파구, 용산구 (4개구)</td><td>2017.9.6</td></tr><tr><td>종로구, 중구, 성동구, 광진구, 동대문구, 성북구, 강북구, 도봉구, 노원구, 은평구, 서대문구, 마포구, 양천구, 강서구, 구로구, 금천구, 영등포구, 동작구, 관악구, 강동구 (21개구)</td><td>2025.10.16 (재지정)</td></tr><tr><td rowspan="5">경기도(12)</td><td>과천시, 광명시, 하남시, 의왕시</td><td rowspan="5">2025.10.16 (재지정)</td></tr><tr><td>성남시 분당구·수정구·중원구</td></tr><tr><td>수원시 영통구·장안구·팔달구</td></tr><tr><td>용인시 수지구</td></tr><tr><td>안양시 동안구</td></tr></tbody></table></div></div>
       </div>
+
+      <!-- 보유 주택 수 -->
       <div class="eh-field" id="f3Houses">
         <span class="eh-field-label">보유 주택 수</span>
         <select class="eh-select-input" id="selHouses" data-g="houses">
@@ -166,6 +195,8 @@
           <option value="unknown">모름</option>
         </select>
       </div>
+
+      <!-- 실거주 기간 -->
       <div class="eh-field" id="f3Reside">
         <span class="eh-field-label">실거주 기간</span>
         <select class="eh-select-input" id="selReside" data-g="reside">
@@ -176,6 +207,8 @@
           <option value="unknown">모름</option>
         </select>
       </div>
+
+      <!-- 전용면적 -->
       <div class="eh-field" id="f3Area">
         <span class="eh-field-label">전용면적</span>
         <select class="eh-select-input" id="selArea" data-g="area">
@@ -185,8 +218,7 @@
         </select>
       </div>
 
-      <!-- ★ 주식 전용 필드 (assetType=stock 일 때만 표시) -->
-      <!-- 상장/비상장 구분 -->
+      <!-- ★ 주식 전용 필드 (1벌만 유지 — 중복 제거) -->
       <div class="eh-field eh-hd" id="f3StockListed">
         <span class="eh-field-label">상장 여부</span>
         <select class="eh-select-input" id="selStockListed">
@@ -194,7 +226,6 @@
           <option value="unlisted">비상장주식</option>
         </select>
       </div>
-      <!-- 대주주 여부 (상장 선택 시 표시) -->
       <div class="eh-field eh-hd" id="f3StockMajor">
         <span class="eh-field-label">대주주 여부
           <button type="button" class="eh-help-btn" id="stockMajorHelpBtn" title="대주주 기준 보기">
@@ -207,42 +238,7 @@
         </select>
         <div class="eh-help-popup eh-hd" id="stockMajorHelpPopup">
           <button type="button" class="eh-help-close" id="stockMajorHelpClose">&times;</button>
-          <h4>대주주 기준 (2024년 기준)</h4>
-          <p>코스피: 지분율 <strong>1% 이상</strong> 또는 시가총액 <strong>10억 원 이상</strong><br>
-          코스닥: 지분율 <strong>2% 이상</strong> 또는 시가총액 <strong>10억 원 이상</strong></p>
-          <p style="margin-top:8px;font-size:12px;color:#888;">직전 사업연도 종료일(12/31) 기준으로 판정합니다.</p>
-        </div>
-      </div>
-      
-      <!-- 중소기업 여부 (비상장 선택 시 표시) -->
-      <div class="eh-field eh-hd" id="f3StockSme">
-        <span class="eh-field-label">법인 규모</span>
-        <select class="eh-select-input" id="selStockSme">
-          <option value="sme" selected>중소기업</option>
-          <option value="mid">중견기업</option>
-          <option value="large">일반법인 (대기업)</option>
-        </select>
-      </div>
-
-      <!-- ★ 주식 전용 필드 -->
-      <div class="eh-field eh-hd" id="f3StockListed">
-        <span class="eh-field-label">상장 여부</span>
-        <select class="eh-select-input" id="selStockListed">
-          <option value="listed" selected>상장주식</option>
-          <option value="unlisted">비상장주식</option>
-        </select>
-      </div>
-      <div class="eh-field eh-hd" id="f3StockMajor">
-        <span class="eh-field-label">대주주 여부
-          <button type="button" class="eh-help-btn" id="stockMajorHelpBtn" title="대주주 기준 보기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8"/><text x="10" y="14.5" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="sans-serif">?</text></svg></button>
-        </span>
-        <select class="eh-select-input" id="selStockMajor">
-          <option value="minor" selected>소액주주</option>
-          <option value="major">대주주</option>
-        </select>
-        <div class="eh-help-popup eh-hd" id="stockMajorHelpPopup">
-          <button type="button" class="eh-help-close" id="stockMajorHelpClose">&times;</button>
-          <h4>대주주 기준 (2024년)</h4>
+          <h4>대주주 기준 (2026년 현재)</h4>
           <table class="eh-help-table"><thead><tr><th>시장</th><th>지분율</th><th>시가총액</th></tr></thead><tbody><tr><td>코스피</td><td>1% 이상</td><td>10억 이상</td></tr><tr><td>코스닥</td><td>2% 이상</td><td>10억 이상</td></tr></tbody></table>
           <p style="font-size:12px;margin-top:8px;color:#6b7280">직전 사업연도 종료일(12/31) 기준 판정</p>
         </div>
@@ -256,7 +252,15 @@
         </select>
       </div>
 
-    
+      <!-- ★ v7.2 신규: 상속세 전용 — 배우자 유무 -->
+      <div class="eh-field eh-hd" id="f3Spouse">
+        <span class="eh-field-label">피상속인의 배우자 유무</span>
+        <select class="eh-select-input" id="selSpouse">
+          <option value="yes" selected>있음 (배우자 상속공제 적용)</option>
+          <option value="no">없음</option>
+        </select>
+      </div>
+
       <!-- 기존 chip 컨테이너 숨김 (JS 호환) -->
       <div style="display:none!important">
         <div class="eh-chips" data-g="regulated"></div>
