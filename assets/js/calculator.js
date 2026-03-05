@@ -274,33 +274,26 @@ $('#backStep1').on('click',function(){ goStep(1); });
    STEP 3
    ================================================================ */
 function configStep3(){
-  var t = formData.taxType;
-  var isStock = (t === 'cgt' && formData.assetType === 'stock');
-
-  if (t === 'cgt') {
-    if (isStock) {
-      // 주식 CGT: 날짜 + 주식 전용 필드만 표시
-      $('#f3Dates').show();
-      $('#f3AcqPrice,#f3Reg,#f3Houses,#f3Reside,#f3Area').hide();
-      $('#f3StockListed').show();
-      updateStockSubFields();
+  var t=formData.taxType, asset=formData.assetType;
+  // 주식 전용 필드 기본 숨김
+  $('#f3StockListed,#f3StockMajor,#f3StockSme').hide();
+  if(t==='cgt'){
+    if(asset==='stock'){
+      $('#f3Dates,#f3AcqPrice').show();
+      $('#f3Reg,#f3Houses,#f3Reside,#f3Area').hide();
+      $('#f3StockListed,#f3StockMajor,#f3StockSme').show();
     } else {
-      // 부동산 CGT
       $('#f3Dates,#f3AcqPrice,#f3Reg,#f3Houses,#f3Reside,#f3Area').show();
-      $('#f3StockListed,#f3StockMajor,#f3StockSme').hide();
     }
   } else if(t==='acq'){
     $('#f3Dates,#f3AcqPrice,#f3Reside').hide();
     $('#f3Reg,#f3Houses,#f3Area').show();
-    $('#f3StockListed,#f3StockMajor,#f3StockSme').hide();
   } else if(t==='prop'){
     $('#f3Dates,#f3AcqPrice,#f3Reg,#f3Reside,#f3Area').hide();
     $('#f3Houses').show();
-    $('#f3StockListed,#f3StockMajor,#f3StockSme').hide();
   } else if(t==='gift'){
     $('#f3Dates,#f3AcqPrice,#f3Houses,#f3Reside,#f3Area').hide();
     $('#f3Reg').show();
-    $('#f3StockListed,#f3StockMajor,#f3StockSme').hide();
   }
 }
 
