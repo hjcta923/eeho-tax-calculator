@@ -276,12 +276,12 @@ $('#backStep1').on('click',function(){ goStep(1); });
 function configStep3(){
   var t=formData.taxType, asset=formData.assetType;
   // 주식 전용 필드 기본 숨김
-  $('#f3StockListed,#f3StockMajor,#f3StockSme').hide();
+  $('#f3StockListed,#f3StockMajor,#f3StockSme').addClass('eh-hd');
   if(t==='cgt'){
     if(asset==='stock'){
       $('#f3Dates,#f3AcqPrice').show();
       $('#f3Reg,#f3Houses,#f3Reside,#f3Area').hide();
-      $('#f3StockListed,#f3StockMajor,#f3StockSme').show();
+      $('#f3StockListed,#f3StockMajor,#f3StockSme').removeClass('eh-hd');
     } else {
       $('#f3Dates,#f3AcqPrice,#f3Reg,#f3Houses,#f3Reside,#f3Area').show();
     }
