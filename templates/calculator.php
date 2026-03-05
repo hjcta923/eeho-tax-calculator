@@ -213,6 +213,7 @@
           <p style="margin-top:8px;font-size:12px;color:#888;">직전 사업연도 종료일(12/31) 기준으로 판정합니다.</p>
         </div>
       </div>
+      
       <!-- 중소기업 여부 (비상장 선택 시 표시) -->
       <div class="eh-field eh-hd" id="f3StockSme">
         <span class="eh-field-label">법인 규모</span>
@@ -223,6 +224,39 @@
         </select>
       </div>
 
+      <!-- ★ 주식 전용 필드 -->
+      <div class="eh-field eh-hd" id="f3StockListed">
+        <span class="eh-field-label">상장 여부</span>
+        <select class="eh-select-input" id="selStockListed">
+          <option value="listed" selected>상장주식</option>
+          <option value="unlisted">비상장주식</option>
+        </select>
+      </div>
+      <div class="eh-field eh-hd" id="f3StockMajor">
+        <span class="eh-field-label">대주주 여부
+          <button type="button" class="eh-help-btn" id="stockMajorHelpBtn" title="대주주 기준 보기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8"/><text x="10" y="14.5" text-anchor="middle" fill="currentColor" font-size="13" font-weight="700" font-family="sans-serif">?</text></svg></button>
+        </span>
+        <select class="eh-select-input" id="selStockMajor">
+          <option value="minor" selected>소액주주</option>
+          <option value="major">대주주</option>
+        </select>
+        <div class="eh-help-popup eh-hd" id="stockMajorHelpPopup">
+          <button type="button" class="eh-help-close" id="stockMajorHelpClose">&times;</button>
+          <h4>대주주 기준 (2024년)</h4>
+          <table class="eh-help-table"><thead><tr><th>시장</th><th>지분율</th><th>시가총액</th></tr></thead><tbody><tr><td>코스피</td><td>1% 이상</td><td>10억 이상</td></tr><tr><td>코스닥</td><td>2% 이상</td><td>10억 이상</td></tr></tbody></table>
+          <p style="font-size:12px;margin-top:8px;color:#6b7280">직전 사업연도 종료일(12/31) 기준 판정</p>
+        </div>
+      </div>
+      <div class="eh-field eh-hd" id="f3StockSme">
+        <span class="eh-field-label">법인 규모</span>
+        <select class="eh-select-input" id="selStockSme">
+          <option value="sme" selected>중소기업</option>
+          <option value="mid">중견기업</option>
+          <option value="large">일반법인 (대기업)</option>
+        </select>
+      </div>
+
+    
       <!-- 기존 chip 컨테이너 숨김 (JS 호환) -->
       <div style="display:none!important">
         <div class="eh-chips" data-g="regulated"></div>
