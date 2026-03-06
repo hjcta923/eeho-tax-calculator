@@ -5,7 +5,7 @@ var A=$('#eeho-app');if(!A.length)return;
 /* ================================================================
    API CONFIG
    ================================================================ */
-var EEHO_API_URL = "https://eeho-ai-tax-calculator-1070315020839.asia-northeast3.run.app";
+var EEHO_API_URL = "https://eeho-api-1070315020839.us-central1.run.app";
 
 /* ================================================================
    STATE
@@ -29,6 +29,8 @@ var aiState = {
   userText: '',
   callCount: 0,
   sessionId: '',
+  phase: 'questions',   // 'questions' → 'report'
+  analyzeData: null,     // /generate-questions 응답 저장 (판례, 키워드 등)
 };
 
 var currentStep = 1;
@@ -154,12 +156,13 @@ function buildPayload(freeText) {
 /* ================================================================
    API 통신
    ================================================================ */
-function callAPI(payload) {
+function callAPI(payload, endpoint) {
+  var url = EEHO_API_URL + (endpoint || '/generate-questions');
   return new Promise(function(resolve, reject) {
-    console.log('[EEHO] → API 요청:', JSON.stringify(payload, null, 2));
+    console.log('[EEHO] → API 요청 (' + endpoint + '):', JSON.stringify(payload, null, 2));
     $.ajax({
-      url: EEHO_API_URL, method: 'POST', contentType: 'application/json',
-      data: JSON.stringify(payload), timeout: 60000,
+      url: url, method: 'POST', contentType: 'application/json',
+      data: JSON.stringify(payload), timeout: 90000,
       success: function(res){ var p=safeParse(res); if(p) resolve(p); else reject('응답 파싱 실패'); },
       error:   function(xhr,status,err){
         if(xhr.responseText){ var p=safeParse(xhr.responseText); if(p&&p.status){resolve(p);return;} }
@@ -725,7 +728,7 @@ $('#resetAll').on('click',function(){
     stockListed:'listed',stockMajor:'minor',stockSme:'sme',
     hasSpouse:'yes'
   };
-  aiState={payload:{},userText:'',callCount:0,sessionId:''};
+  aiState={payload:{},userText:'',callCount:0,sessionId:'',phase:'questions',analyzeData:null};
   currentEstimatedTax=0;
   $('#inpAmount,#inpAcqPrice,#inpAddress,#inpStockName').val('');
   $('#inpAcqDate,#inpSaleDate').val('');
@@ -757,6 +760,7 @@ $('#aiSendText').on('click',function(){
   var text=$('#aiTextInput').val().trim();
   if(!text){alert('상황을 입력해주세요.');return;}
   aiState.userText=text; aiState.callCount=0; aiState.sessionId=generateSessionId();
+  aiState.phase='questions'; aiState.analyzeData=null;
   var chat=$('#aiConvChat').empty();
   addBubble(chat,'user',text);
   addBubble(chat,'ai','안녕하세요, EEHO AI입니다.\n고객님이 제출하신 자료에 최적화된 절세 전략을 구상하고 있습니다.');
@@ -765,23 +769,88 @@ $('#aiSendText').on('click',function(){
   sendToAPI();
 });
 
+/* ================================================================
+   ★ sendToAPI: Multi-Phase 라우팅
+   Phase 'questions' → POST /generate-questions (추가질문 루프)
+   Phase 'report'    → POST /report (최종 리포트)
+   ================================================================ */
 function sendToAPI(){
   aiState.callCount++;
-  $('#aiProgressFill').css('width', Math.min(90,aiState.callCount*25)+'%');
+  var pct = Math.min(90, aiState.callCount * 20);
+  $('#aiProgressFill').css('width', pct + '%');
   showAI('#aiLoading');
-  callAPI(aiState.payload)
-    .then(function(response){
-      var data=safeParse(response);
-      if(!data||!data.status) throw new Error('올바르지 않은 응답 형식');
-      if(data.status==='need_more_info'){ handleNeedMoreInfo(data); return; }
-      if(data.status==='success'){ $('#aiProgressFill').css('width','100%'); handleSuccess(data); return; }
-      throw new Error('알 수 없는 status: '+data.status);
-    })
-    .catch(function(err){
-      console.error('[EEHO] API 실패:',err);
-      alert('AI 분석 중 오류가 발생했습니다.\n'+String(err)+'\n\n다시 시도해주세요.');
-      showAI('#aiTextPhase');
-    });
+
+  if (aiState.phase === 'questions') {
+    // Phase 1: Gap Analysis + 추가 질문
+    callAPI(aiState.payload, '/generate-questions')
+      .then(function(response){
+        var data = safeParse(response);
+        if (!data) throw new Error('올바르지 않은 응답 형식');
+
+        // 분석 데이터 저장 (판례, 키워드 등 — 리포트 요청 시 사용)
+        if (data.판례검색 || data.추출키워드 || data.참조섹션) {
+          aiState.analyzeData = {
+            판례검색: data.판례검색 || [],
+            추출키워드: data.추출키워드 || [],
+            참조섹션: data.참조섹션 || []
+          };
+        }
+
+        // Gap이 있으면 추가 질문 표시
+        if (data.status === 'need_more_info') {
+          handleNeedMoreInfo(data);
+          return;
+        }
+
+        // Gap이 없거나 분석 완료 → 리포트 단계로 전환
+        aiState.phase = 'report';
+        sendReport(data);
+      })
+      .catch(handleAPIError);
+
+  } else if (aiState.phase === 'report') {
+    // Phase 2: 최종 리포트 생성
+    var reportPayload = buildReportPayload();
+    callAPI(reportPayload, '/report')
+      .then(function(response){
+        var data = safeParse(response);
+        if (!data) throw new Error('올바르지 않은 응답 형식');
+        $('#aiProgressFill').css('width', '100%');
+        handleSuccess(data);
+      })
+      .catch(handleAPIError);
+  }
+}
+
+/* 리포트 요청 payload 구성 */
+function buildReportPayload() {
+  var ad = aiState.analyzeData || {};
+  return {
+    question: aiState.userText,
+    사실관계: aiState.confirmData || {},
+    체크리스트응답: [],
+    추가정보: aiState.payload.additional_data || {},
+    판례검색: ad.판례검색 || [],
+    추출키워드: ad.추출키워드 || [],
+    참조섹션: ad.참조섹션 || [],
+    calculated_data: aiState.payload.calculated_data || {},
+    structured_data: aiState.payload.structured_data || {},
+    tax_category: aiState.payload.tax_category || {}
+  };
+}
+
+/* 분석 완료 시 리포트 자동 요청 */
+function sendReport(analysisData) {
+  // 분석 결과를 confirmData로 저장
+  aiState.confirmData = analysisData.사실관계 || analysisData;
+  sendToAPI();
+}
+
+/* API 에러 공통 핸들러 */
+function handleAPIError(err) {
+  console.error('[EEHO] API 실패:', err);
+  alert('AI 분석 중 오류가 발생했습니다.\n' + String(err) + '\n\n다시 시도해주세요.');
+  showAI('#aiTextPhase');
 }
 
 function handleNeedMoreInfo(data){
@@ -842,30 +911,84 @@ A.on('click','#convSubmit',function(){
 });
 
 function handleSuccess(data){
-  var origTotal=currentEstimatedTax, isPASS, detailText, riskText, badgeLabel;
-  if(data.result_type){
-    isPASS=(data.result_type==='PASS'); detailText=data.details||''; riskText=data.risk_warning||'';
-  } else if(data.final_alias){
-    isPASS=true; badgeLabel=data.final_alias; detailText=data.calculation||''; riskText='';
+  var origTotal = currentEstimatedTax;
+  var isPASS, detailText, riskText, badgeLabel, afterTax;
+
+  // ★ 새 백엔드 형식: { 리포트: { 세액비교, 판단근거, 리스크, 종합의견 } }
+  if (data.리포트) {
+    var report = data.리포트;
+    var compare = report.세액비교 || {};
+
+    // 절감 여부 판단
+    var savedTax = compare.절감액 || 0;
+    afterTax = compare.절세_적용후_세액;
+    isPASS = (savedTax > 0 || (afterTax !== undefined && afterTax === 0));
+    badgeLabel = isPASS ? '절세 방안 확인' : '분석 완료';
+
+    // 상세 내용 조립
+    var details = [];
+    if (report.종합의견) details.push(report.종합의견);
+    if (report.판단근거 && report.판단근거.length) {
+      report.판단근거.forEach(function(item){
+        details.push('【' + (item.조문||'') + '】 ' + (item.판단||item.내용||''));
+      });
+    }
+    detailText = details.join('\n\n');
+
+    // 리스크 조립
+    var risks = [];
+    if (report.리스크 && report.리스크.length) {
+      report.리스크.forEach(function(item){
+        risks.push('⚠ [' + (item.유형||'') + '] ' + (item.내용||'') + (item.대응방안 ? '\n→ ' + item.대응방안 : ''));
+      });
+    }
+    riskText = risks.join('\n\n');
+
+  // 기존 형식 호환 (result_type / final_alias)
+  } else if (data.result_type) {
+    isPASS = (data.result_type === 'PASS');
+    detailText = data.details || '';
+    riskText = data.risk_warning || '';
+  } else if (data.final_alias) {
+    isPASS = true;
+    badgeLabel = data.final_alias;
+    detailText = data.calculation || '';
+    riskText = '';
   } else {
-    isPASS=false; detailText='결과를 분석할 수 없습니다.'; riskText='';
+    isPASS = false;
+    detailText = '결과를 분석할 수 없습니다.';
+    riskText = '';
   }
-  var $badge=$('#finalResultBadge'); $badge.removeClass('eh-badge-pass eh-badge-fail');
-  if(isPASS){
+
+  // 배지 렌더링
+  var $badge = $('#finalResultBadge');
+  $badge.removeClass('eh-badge-pass eh-badge-fail');
+  if (isPASS) {
     $badge.addClass('eh-badge-pass'); $('#finalBadgeIcon').text('✓');
-    $('#finalBadgeLabel').text(badgeLabel||'비과세 특례 적용 가능'); $('#finalBadgeType').text('PASS');
+    $('#finalBadgeLabel').text(badgeLabel || '절세 방안 적용 가능'); $('#finalBadgeType').text('PASS');
   } else {
     $badge.addClass('eh-badge-fail'); $('#finalBadgeIcon').text('✗');
-    $('#finalBadgeLabel').text(badgeLabel||'비과세 요건 미충족'); $('#finalBadgeType').text('FAIL');
+    $('#finalBadgeLabel').text(badgeLabel || '분석 완료'); $('#finalBadgeType').text('REVIEW');
   }
-  $('#finalBefore').text('₩'+fmt(origTotal));
-  $('#finalAfter').text(isPASS?'₩0 (비과세)':'₩'+fmt(origTotal));
-  $('#finalDetails').html(detailText&&detailText.trim()
-    ?'<div class="eh-details-content">'+esc(detailText)+'</div>'
-    :'<p>상세 분석 결과는 세무 전문가 상담 시 안내드립니다.</p>');
-  $('#finalRisks').html(riskText&&riskText.trim()
-    ?'<div class="eh-risk-item">'+esc(riskText)+'</div>'
-    :'<div class="eh-risk-item eh-risk-none">현재 확인된 리스크가 없습니다.</div>');
+
+  // 세액 비교 렌더링
+  $('#finalBefore').text('₩' + fmt(origTotal));
+  if (afterTax !== undefined) {
+    $('#finalAfter').text('₩' + fmt(afterTax));
+  } else {
+    $('#finalAfter').text(isPASS ? '₩0 (비과세)' : '₩' + fmt(origTotal));
+  }
+
+  // 상세 분석
+  $('#finalDetails').html(detailText && detailText.trim()
+    ? '<div class="eh-details-content">' + esc(detailText) + '</div>'
+    : '<p>상세 분석 결과는 세무 전문가 상담 시 안내드립니다.</p>');
+
+  // 리스크
+  $('#finalRisks').html(riskText && riskText.trim()
+    ? '<div class="eh-risk-item">' + esc(riskText) + '</div>'
+    : '<div class="eh-risk-item eh-risk-none">현재 확인된 리스크가 없습니다.</div>');
+
   showAI('#aiFinal');
 }
 
