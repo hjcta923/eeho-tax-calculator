@@ -82,6 +82,15 @@ function cleanVarNames(text){
   return text;
 }
 
+/* ★ v7.4: 금액 입력 폰트 자동 축소 */
+function autoFitAmount(el){
+  var len=el.val().length;
+  if(len>15) el.css('font-size','18px');
+  else if(len>12) el.css('font-size','22px');
+  else if(len>9) el.css('font-size','28px');
+  else el.css('font-size','');
+}
+
 function numToKorean(n){
   if(!n||n<=0)return'';
   var units=['','만','억','조'],parts=[],idx=0;
@@ -431,6 +440,7 @@ $('#reTypeSelect').on('change',function(){formData.reSubType=$(this).val();});
 $('#inpAmount').on('input',function(){
   var v=raw($(this).val()),n=parseInt(v)||0;
   $(this).val(n>0?fmt(n):'');formData.amount=n;$('#amountKr').text(numToKorean(n));
+  autoFitAmount($(this));
 });
 A.on('click','.eh-quick',function(){
   var a=+$(this).data('a');
@@ -440,6 +450,7 @@ A.on('click','.eh-quick',function(){
 $('#inpAcqPrice').on('input',function(){
   var v=raw($(this).val()),n=parseInt(v)||0;
   $(this).val(n>0?fmt(n):'');formData.acqPrice=n;$('#acqPriceKr').text(numToKorean(n));
+  autoFitAmount($(this));
 });
 $('#inpAddress').on('input',function(){formData.address=$(this).val();});
 $('#inpStockName').on('input',function(){formData.stockName=$(this).val();});
