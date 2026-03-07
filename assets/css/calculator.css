@@ -309,11 +309,11 @@
 #eeho-app .eh-chip:hover { border-color: var(--teal); color: var(--teal); }
 #eeho-app .eh-chip.active { background: var(--teal); color: var(--white); border-color: var(--teal); }
 #eeho-app .eh-amount-section { margin-top: 20px; }
-#eeho-app .eh-amount-box { background: var(--pearl); border-radius: var(--R); padding: 32px 28px 24px; margin-bottom: 20px; }
+#eeho-app .eh-amount-box { background: var(--pearl); border-radius: var(--R); padding: 32px 28px 24px; margin-bottom: 20px; overflow: hidden; }
 #eeho-app .eh-amount-box.sm { padding: 16px; margin-bottom: 0; background: transparent; }
-#eeho-app .eh-amount-display { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+#eeho-app .eh-amount-display { display: flex; align-items: baseline; justify-content: center; gap: 8px; overflow: hidden; min-width: 0; }
 #eeho-app .eh-amount-display.sm { justify-content: flex-start; }
-#eeho-app .eh-amount-input { font-size: clamp(24px, 5vw, 40px); font-weight: 800; text-align: center; border: none; outline: none; background: transparent; font-family: var(--F); color: var(--text); width: 100%; max-width: 100%; letter-spacing: -.02em; }
+#eeho-app .eh-amount-input { font-size: 40px; font-weight: 800; text-align: center; border: none; outline: none; background: transparent; font-family: var(--F); color: var(--text); width: 100%; max-width: 100%; letter-spacing: -.02em; overflow: hidden; text-overflow: ellipsis; }
 #eeho-app .eh-amount-input.sm { font-size: 18px; font-weight: 600; text-align: right; max-width: none; }
 #eeho-app .eh-amount-input::placeholder { color: var(--gray); }
 #eeho-app .eh-amount-unit { font-size: 20px; font-weight: 600; color: var(--text-s); white-space: nowrap; }
