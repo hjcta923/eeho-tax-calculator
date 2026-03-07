@@ -313,7 +313,7 @@
 #eeho-app .eh-amount-box.sm { padding: 16px; margin-bottom: 0; background: transparent; }
 #eeho-app .eh-amount-display { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
 #eeho-app .eh-amount-display.sm { justify-content: flex-start; }
-#eeho-app .eh-amount-input { font-size: 40px; font-weight: 800; text-align: center; border: none; outline: none; background: transparent; font-family: var(--F); color: var(--text); width: 100%; max-width: 500px; letter-spacing: -.02em; }
+#eeho-app .eh-amount-input { font-size: clamp(24px, 5vw, 40px); font-weight: 800; text-align: center; border: none; outline: none; background: transparent; font-family: var(--F); color: var(--text); width: 100%; max-width: 100%; letter-spacing: -.02em; }
 #eeho-app .eh-amount-input.sm { font-size: 18px; font-weight: 600; text-align: right; max-width: none; }
 #eeho-app .eh-amount-input::placeholder { color: var(--gray); }
 #eeho-app .eh-amount-unit { font-size: 20px; font-weight: 600; color: var(--text-s); white-space: nowrap; }
