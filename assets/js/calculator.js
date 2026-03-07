@@ -1147,6 +1147,21 @@ $('#supplementSubmit').on('click',function(){
   aiState.isSecondRound=true;
   saveRlhfData(text);
 
+// ★ Phase 2: 보완하기 텍스트 → /feedback 전송 (Self-Correcting Loop)
+  var feedbackPayload = {
+    session_id:      aiState.sessionId,
+    original_report: aiState.confirmData || {},
+    feedback_text:   text,
+    rating:          3
+  };
+  callAPI(feedbackPayload, '/feedback')
+    .then(function(res){
+      console.log('[EEHO] ★ /feedback 저장 완료:', res.triage_result, '| 오답노트:', res.saved_to_error_notes);
+    })
+    .catch(function(err){
+      console.warn('[EEHO] /feedback 저장 실패 (무시):', err);
+    });
+   
   // /confirm 재호출: 보완 내용을 user_corrections에 포함
   var confirmPayload = {
     session_id:        aiState.sessionId,
