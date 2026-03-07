@@ -38,7 +38,7 @@ function eeho_api_proxy() {
     $endpoint = sanitize_text_field( $_POST['endpoint'] ?? '/generate-questions' );
     $api_base = get_option( 'eeho_api_url', 'https://eeho-ai-api-1070315020839.asia-northeast3.run.app' );
     if ( empty( $payload ) ) { wp_send_json_error( '요청 데이터가 비어있습니다.' ); }
-    $allowed = array( '/generate-questions', '/confirm', '/report', '/' );
+    $allowed = array( '/generate-questions', '/confirm', '/report', '/feedback', '/' );
     if ( ! in_array( $endpoint, $allowed, true ) ) { wp_send_json_error( '허용되지 않은 엔드포인트.' ); }
     $url      = rtrim( $api_base, '/' ) . $endpoint;
     $response = wp_remote_post( $url, array(
