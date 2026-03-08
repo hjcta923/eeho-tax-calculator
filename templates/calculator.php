@@ -38,6 +38,8 @@
 #eeho-app .eh-cl-btn{flex:1;padding:12px 16px;border:1.5px solid #D5D5D2;border-radius:10px;background:#fff;font-size:14px;font-weight:600;color:#4A4A48;cursor:pointer;transition:all .25s;text-align:center}
 #eeho-app .eh-cl-btn:hover{border-color:#004447;color:#004447;background:rgba(0,68,71,.06)}
 #eeho-app .eh-cl-btn.selected{border-color:#004447;background:#004447;color:#fff}
+#eeho-app .eh-cl-btn.selected-no{border-color:#D32F2F;background:#D32F2F;color:#fff}
+#eeho-app .eh-cl-btn.selected-unknown{border-color:#8A8A88;background:#8A8A88;color:#fff}
 #eeho-app .eh-cl-item.eh-cl-error{background:rgba(211,47,47,.04);border-radius:10px;padding:20px 16px;margin:0 -16px}
 
 /* ===== Confirm ===== */
@@ -94,6 +96,19 @@
 #eeho-app .eh-amount-display.sm{justify-content:flex-start}
 #eeho-app .eh-amount-input.sm{font-size:16px;font-weight:600;text-align:right;max-width:none}
 #eeho-app .eh-amount-box.sm .eh-amount-kr{text-align:right;font-size:11px;padding:2px 8px;margin-top:2px}
+
+/* ===== Gift Relation Cards ===== */
+#eeho-app .eh-gift-rel-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+#eeho-app .eh-gift-rel-card{position:relative;background:#fff;border:2px solid #F0EDEB;border-radius:14px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:all .25s}
+#eeho-app .eh-gift-rel-card:hover{border-color:#D6C0B6;box-shadow:0 4px 12px rgba(0,68,71,.06)}
+#eeho-app .eh-gift-rel-card.active{border-color:#F95C32;border-width:2.5px;background:rgba(249,92,50,.04);box-shadow:0 4px 16px rgba(249,92,50,.1)}
+#eeho-app .eh-gift-rel-icon{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+#eeho-app .eh-gift-label{font-size:15px;font-weight:700;color:#004447;padding:4px 12px;background:rgba(0,68,71,.06);border-radius:8px}
+#eeho-app .eh-gift-rel-card.active .eh-gift-label{background:rgba(249,92,50,.08);color:#F95C32}
+#eeho-app .eh-gift-arrow{font-size:16px;color:#8A8A88;font-weight:700}
+#eeho-app .eh-gift-rel-card.active .eh-gift-arrow{color:#F95C32}
+#eeho-app .eh-gift-rel-deduct{font-size:12px;font-weight:600;color:#004447;background:rgba(0,68,71,.06);padding:3px 10px;border-radius:12px}
+@media(max-width:420px){#eeho-app .eh-gift-rel-grid{grid-template-columns:1fr}}
 </style>
 <div id="eeho-app">
 
@@ -206,7 +221,7 @@
         <input type="text" class="eh-text-input" id="inpStockName" placeholder="예: 삼성전자">
       </div>
 
-      <!-- 일반 금액 입력 (상속세 외) -->
+      <!-- 일반 금액 입력 (양도세/취득세/증여세) -->
       <div class="eh-amount-section" id="singleAmountSection">
         <span class="eh-field-label" id="amountLabel">양도가액</span>
         <div class="eh-amount-box">
@@ -215,8 +230,36 @@
         </div>
       </div>
 
-      <!-- ★ Task 2: 상속세 복수 자산 입력 -->
+      <!-- ★ 상속세: 복수 자산 입력 (주소/부동산유형 없음) -->
       <div id="inheritMultiAsset" style="display:none">
+        <!-- 피상속인/상속인 기본 정보 -->
+        <div class="eh-field" style="margin-bottom:20px">
+          <span class="eh-field-label">피상속인의 배우자 유무</span>
+          <select class="eh-select-input" id="selSpouse">
+            <option value="yes" selected>있음 (배우자 상속공제 적용)</option>
+            <option value="no">없음 (사별 등)</option>
+          </select>
+        </div>
+        <div class="eh-field" style="margin-bottom:20px">
+          <span class="eh-field-label">자녀 수</span>
+          <select class="eh-select-input" id="selChildCount">
+            <option value="0">없음</option>
+            <option value="1" selected>1명</option>
+            <option value="2">2명</option>
+            <option value="3">3명</option>
+            <option value="4+">4명 이상</option>
+          </select>
+        </div>
+        <div class="eh-field" style="margin-bottom:20px">
+          <span class="eh-field-label">피상속인(돌아가신 분)의 주택 보유 수</span>
+          <select class="eh-select-input" id="selDecedentHouses">
+            <option value="0">없음 (무주택)</option>
+            <option value="1" selected>1주택</option>
+            <option value="2">2주택</option>
+            <option value="3+">3주택 이상</option>
+          </select>
+        </div>
+
         <div class="eh-field-label" style="margin-bottom:16px">상속 재산 목록</div>
         <p class="eh-inherit-guide">상속 재산의 종류별로 가액을 입력해주세요. 여러 자산이 있으면 '+ 자산 추가'를 눌러주세요.</p>
         <div id="inheritAssetList"></div>
@@ -224,6 +267,26 @@
         <div class="eh-inherit-total">
           <span>총 상속재산가액</span>
           <div><span class="eh-inherit-total-amt" id="inheritTotalAmt">₩0</span><div class="eh-amount-kr" id="inheritTotalKr" style="text-align:right;margin-top:4px"></div></div>
+        </div>
+      </div>
+
+      <!-- ★ 재산세/종부세: 보유 주택 통합 입력 (Step 2에서 주택 수 + 공시가격 한 번에) -->
+      <div id="propHouseSection" style="display:none">
+        <div class="eh-field" style="margin-bottom:20px">
+          <span class="eh-field-label">보유 주택 수</span>
+          <select class="eh-select-input" id="selHousesProp">
+            <option value="1" selected>1주택</option>
+            <option value="2">2주택</option>
+            <option value="3">3주택</option>
+            <option value="multi">4주택 이상</option>
+            <option value="unknown">모름</option>
+          </select>
+        </div>
+        <div id="propDynamicHouses"></div>
+        <button type="button" class="eh-btn-ghost eh-btn-sm" id="addPropHouseExtra" style="display:none;margin-top:8px">+ 주택 추가</button>
+        <div class="eh-inherit-total" id="propTotalWrap" style="display:none">
+          <span>총 공시가격 합계</span>
+          <div><span class="eh-inherit-total-amt" id="propTotalAmt">₩0</span><div class="eh-amount-kr" id="propTotalKr" style="text-align:right;margin-top:4px"></div></div>
         </div>
       </div>
     </div>
@@ -269,18 +332,53 @@
         <div class="eh-help-popup eh-hd" id="regHelpPopup"><button type="button" class="eh-help-close" id="regHelpClose">&times;</button><h4>조정대상지역 지정·해제현황 (2025.10.16 현재)</h4><div class="eh-help-scroll"><table class="eh-help-table"><thead><tr><th>구분</th><th>지정지역</th><th>지정일자</th></tr></thead><tbody><tr><td rowspan="2">서울특별시(25)</td><td>서초구, 강남구, 송파구, 용산구 (4개구)</td><td>2017.9.6</td></tr><tr><td>종로구, 중구, 성동구, 광진구, 동대문구, 성북구, 강북구, 도봉구, 노원구, 은평구, 서대문구, 마포구, 양천구, 강서구, 구로구, 금천구, 영등포구, 동작구, 관악구, 강동구 (21개구)</td><td>2025.10.16 (재지정)</td></tr><tr><td rowspan="5">경기도(12)</td><td>과천시, 광명시, 하남시, 의왕시</td><td rowspan="5">2025.10.16 (재지정)</td></tr><tr><td>성남시 분당구·수정구·중원구</td></tr><tr><td>수원시 영통구·장안구·팔달구</td></tr><tr><td>용인시 수지구</td></tr><tr><td>안양시 동안구</td></tr></tbody></table></div></div>
       </div>
 
-    <div id="f3GiftRelation" class="eh-field eh-hd">
-      <label class="eh-label">수증자와의 관계</label>
-      <select id="selGiftRelation" class="eh-select-input">
-        <option value="child_adult" selected>직계비속 (성인 자녀)</option>
-        <option value="child_minor">직계비속 (미성년 자녀)</option>
-        <option value="spouse">배우자</option>
-        <option value="parent">직계존속 (부모)</option>
-        <option value="other">기타 친족</option>
-      </select>
-    </div>
-
-
+      <!-- ★ 증여세 전용: 관계 선택 시각적 카드 + 추가 조건 -->
+      <div id="f3GiftSection" class="eh-hd">
+        <div class="eh-field-label" style="margin-bottom:16px">증여자(주는 분)와 수증자(받는 분)의 관계</div>
+        <p class="eh-inherit-guide" style="margin-bottom:16px">해당하는 관계를 선택해주세요. 관계에 따라 공제 금액이 달라집니다.</p>
+        <div class="eh-gift-rel-grid" id="giftRelGrid">
+          <button type="button" class="eh-gift-rel-card active" data-rel="child_adult">
+            <div class="eh-gift-rel-icon"><span class="eh-gift-label">부모</span><span class="eh-gift-arrow">&rarr;</span><span class="eh-gift-label">성인 자녀</span></div>
+            <span class="eh-gift-rel-deduct">공제 5,000만원</span>
+          </button>
+          <button type="button" class="eh-gift-rel-card" data-rel="child_minor">
+            <div class="eh-gift-rel-icon"><span class="eh-gift-label">부모</span><span class="eh-gift-arrow">&rarr;</span><span class="eh-gift-label">미성년 자녀</span></div>
+            <span class="eh-gift-rel-deduct">공제 2,000만원</span>
+          </button>
+          <button type="button" class="eh-gift-rel-card" data-rel="spouse">
+            <div class="eh-gift-rel-icon"><span class="eh-gift-label">배우자</span><span class="eh-gift-arrow">&harr;</span><span class="eh-gift-label">배우자</span></div>
+            <span class="eh-gift-rel-deduct">공제 6억원</span>
+          </button>
+          <button type="button" class="eh-gift-rel-card" data-rel="parent">
+            <div class="eh-gift-rel-icon"><span class="eh-gift-label">자녀</span><span class="eh-gift-arrow">&rarr;</span><span class="eh-gift-label">부모</span></div>
+            <span class="eh-gift-rel-deduct">공제 5,000만원</span>
+          </button>
+          <button type="button" class="eh-gift-rel-card" data-rel="other">
+            <div class="eh-gift-rel-icon"><span class="eh-gift-label">기타 친족</span></div>
+            <span class="eh-gift-rel-deduct">공제 1,000만원</span>
+          </button>
+        </div>
+        <select id="selGiftRelation" class="eh-select-input" style="display:none">
+          <option value="child_adult" selected>직계비속 (성인 자녀)</option>
+          <option value="child_minor">직계비속 (미성년 자녀)</option>
+          <option value="spouse">배우자</option>
+          <option value="parent">직계존속 (부모)</option>
+          <option value="other">기타 친족</option>
+        </select>
+        <div class="eh-field" style="margin-top:24px">
+          <span class="eh-field-label">최근 10년 내 같은 증여자로부터 증여받은 적이 있나요?</span>
+          <select class="eh-select-input" id="selPriorGiftFromSame">
+            <option value="no" selected>없음</option>
+            <option value="yes">있음 (기증여 합산 대상)</option>
+            <option value="unknown">모름</option>
+          </select>
+        </div>
+        <div class="eh-field eh-hd" id="f3PriorGiftDetail" style="margin-top:16px">
+          <span class="eh-field-label">기증여 금액 (10년 내 동일인으로부터 받은 총액)</span>
+          <div class="eh-amount-box sm"><input type="text" class="eh-amount-input" id="inpPriorGiftAmt" inputmode="numeric" placeholder="0"><span class="eh-won-label">원</span></div>
+          <div class="eh-amount-kr" id="priorGiftAmtKr"></div>
+        </div>
+      </div>
 
       <div class="eh-field" id="f3Houses">
         <span class="eh-field-label">보유 주택 수</span>
@@ -291,14 +389,6 @@
           <option value="multi">4주택 이상</option>
           <option value="unknown">모름</option>
         </select>
-      </div>
-
-      <!-- ★ Task 4: 재산세 다주택 추가 입력 -->
-      <div id="propMultiHouse" style="display:none">
-        <div class="eh-field-label" style="margin-bottom:12px">추가 주택 공시가격</div>
-        <p class="eh-prop-guide">위에 입력한 공시가격은 주택 1의 금액입니다. 추가 주택의 공시가격을 입력해주세요.</p>
-        <div id="propHouseList"></div>
-        <button type="button" class="eh-btn-ghost eh-btn-sm" id="addPropHouse" style="margin-top:8px">+ 주택 추가</button>
       </div>
 
       <div class="eh-field" id="f3Reside">
@@ -353,13 +443,53 @@
         </select>
       </div>
 
-      <!-- 상속세 전용: 배우자 유무 -->
-      <div class="eh-field eh-hd" id="f3Spouse">
-        <span class="eh-field-label">피상속인의 배우자 유무</span>
-        <select class="eh-select-input" id="selSpouse">
-          <option value="yes" selected>있음 (배우자 상속공제 적용)</option>
-          <option value="no">없음</option>
-        </select>
+      <!-- 상속세 전용: 공제 조건 + 채무 입력 -->
+      <div id="f3InheritDebt" style="display:none">
+        <p class="eh-subtitle" style="margin-bottom:24px">상속공제 판단에 필요한 조건과 채무를 입력해주세요</p>
+
+        <!-- 공제 조건 -->
+        <div class="eh-field">
+          <span class="eh-field-label">상속인이 피상속인과 같은 주택에서 동거하셨나요?</span>
+          <select class="eh-select-input" id="selCohabitation">
+            <option value="no" selected>아니오</option>
+            <option value="yes">예, 동거했습니다</option>
+            <option value="unknown">모름</option>
+          </select>
+        </div>
+        <div class="eh-field" id="f3CohabYears" style="display:none">
+          <span class="eh-field-label">동거 기간</span>
+          <select class="eh-select-input" id="selCohabYears">
+            <option value="under5">5년 미만</option>
+            <option value="5to10">5년 이상 ~ 10년 미만</option>
+            <option value="over10" selected>10년 이상</option>
+          </select>
+        </div>
+        <div class="eh-field">
+          <span class="eh-field-label">상속인 본인 명의의 주택을 보유하고 계신가요?</span>
+          <select class="eh-select-input" id="selHeirHasHouse">
+            <option value="no" selected>아니오 (무주택)</option>
+            <option value="yes">예, 본인 명의 주택 있음</option>
+            <option value="unknown">모름</option>
+          </select>
+        </div>
+        <div class="eh-field">
+          <span class="eh-field-label">피상속인이 사망 전 10년 이내에 상속인에게 증여한 재산이 있나요?</span>
+          <select class="eh-select-input" id="selPriorGift">
+            <option value="no" selected>없음</option>
+            <option value="yes">있음</option>
+            <option value="unknown">모름</option>
+          </select>
+        </div>
+
+        <!-- 채무 -->
+        <div class="eh-field-label" style="margin-bottom:8px;margin-top:32px;padding-top:24px;border-top:1px solid #F0EDEB">채무 및 비용</div>
+        <p class="eh-inherit-guide">예: 은행 대출금, 전세보증금(임대보증금), 미납 세금, 장례비용(최대 1,500만원), 병원비, 카드대금 등</p>
+        <div id="inheritDebtList"></div>
+        <button type="button" class="eh-btn-ghost eh-btn-sm" id="addInheritDebt" style="margin-top:12px">+ 채무 추가</button>
+        <div class="eh-inherit-total" id="debtTotalWrap" style="display:none;margin-top:20px">
+          <span>총 채무·비용</span>
+          <div><span class="eh-inherit-total-amt" id="debtTotalAmt" style="color:#D32F2F">-₩0</span><div class="eh-amount-kr" id="debtTotalKr" style="text-align:right;margin-top:4px"></div></div>
+        </div>
       </div>
 
       <!-- 숨김 chip 컨테이너 (JS 호환) -->
@@ -406,18 +536,18 @@
   <div class="eh-card eh-card-main">
     <h1 class="eh-title">상황을 알려주세요</h1>
     <p class="eh-subtitle">자유롭게 입력하시면 EEHO AI가 절세 가능성을 분석합니다</p>
-    <div class="eh-examples">
+    <div class="eh-examples" id="aiExamples">
       <div class="eh-ex-label">✏️ 입력 예시</div>
-      <div class="eh-ex-bubble">"올해 결혼을 하면서 2주택이 되었어요"</div>
-      <div class="eh-ex-bubble">"부모님이 2주택자인데, 송파구 소재 아파트를 저가양수 하려고 해요."</div>
-      <div class="eh-ex-bubble">"작년에 이사하려고 분당 아파트를 하나 더 샀어요. 기존 송파 아파트는 언제 팔아야 하나요?"</div>
+      <div class="eh-ex-bubble" id="aiEx1">"올해 결혼을 하면서 2주택이 되었어요"</div>
+      <div class="eh-ex-bubble" id="aiEx2">"부모님이 2주택자인데, 송파구 소재 아파트를 저가양수 하려고 해요."</div>
+      <div class="eh-ex-bubble" id="aiEx3">"작년에 이사하려고 분당 아파트를 하나 더 샀어요. 기존 송파 아파트는 언제 팔아야 하나요?"</div>
     </div>
     <div class="eh-ta-wrap"><textarea class="eh-textarea" id="aiTextInput" placeholder="상황을 자유롭게 입력해주세요..." rows="4" maxlength="500"></textarea></div>
     <div class="eh-ta-bar"><span class="eh-ta-cnt"><span id="aiTxtCnt">0</span>/500</span><button class="eh-btn-primary" id="aiSendText">분석 요청 →</button></div>
   </div>
 </div>
 
-<!-- ★ AI 5b: 체크리스트 (버전 A 기반 신규) -->
+<!-- ★ AI 5b: 체크리스트 -->
 <div class="eh-ai" id="aiChecklistPhase">
   <div class="eh-ai-header">
     <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
@@ -425,16 +555,14 @@
   <div class="eh-card eh-card-main" style="padding:32px 36px 36px">
     <h2 class="eh-title" style="font-size:22px;margin-bottom:6px">추가 확인 사항</h2>
     <p class="eh-subtitle" style="margin-bottom:20px">아래 조건에 해당하는지 확인해주세요</p>
-
     <div id="checklistQuestions"></div>
-
     <div style="display:flex;gap:12px;margin-top:28px">
       <button class="eh-btn-primary" id="checklistSubmit">제출하기 →</button>
     </div>
   </div>
 </div>
 
-<!-- ★ AI 5c: 사실관계 확인 (버전 A 기반 신규) -->
+<!-- ★ AI 5c: 사실관계 확인 -->
 <div class="eh-ai" id="aiConfirmPhase">
   <div class="eh-ai-header">
     <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
@@ -442,20 +570,12 @@
   <div class="eh-card eh-card-main" style="padding:32px 36px 36px">
     <h2 class="eh-title" style="font-size:22px;margin-bottom:6px">사실관계 확인</h2>
     <p class="eh-subtitle" style="margin-bottom:20px">아래 내용이 정확한지 확인해주세요</p>
-
-    <!-- 적용 가능성 배지 -->
     <span class="eh-conf-badge" id="confirmConfidence"></span>
-
-    <!-- 사실관계 요약 -->
     <div class="eh-confirm-fact" style="margin:20px 0">
       <p id="confirmFactSummary" style="font-size:14px;line-height:1.7;color:var(--text)"></p>
     </div>
-
-    <!-- 요건 충족 체크 -->
     <div id="confirmRequirements" style="margin-bottom:24px"></div>
-
     <p class="eh-confirm-guide" id="confirmGuideText" style="font-size:13px;color:var(--text-m);margin-bottom:20px">사실관계가 정확하면 '제출하기'를, 수정·보완이 필요하면 '보완하기'를 눌러주세요.</p>
-
     <div style="display:flex;gap:12px">
       <button class="eh-btn-primary" id="submitFinal">제출하기 →</button>
       <button class="eh-btn-outline" id="supplementBtn">보완하기</button>
@@ -464,7 +584,7 @@
   </div>
 </div>
 
-<!-- ★ AI 5d: 보완하기 텍스트 입력 (버전 A 기반 신규) -->
+<!-- ★ AI 5d: 보완하기 텍스트 입력 -->
 <div class="eh-ai" id="aiSupplementPhase">
   <div class="eh-ai-header">
     <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
@@ -481,7 +601,7 @@
   </div>
 </div>
 
-<!-- AI 대화형 (호환용 — 미사용 시 숨김 유지) -->
+<!-- AI 대화형 (호환용) -->
 <div class="eh-ai" id="aiConvPhase">
   <div class="eh-ai-header">
     <div class="eh-brand">세금 계산기 <span class="eh-brand-ai">with EEHO AI</span></div>
@@ -496,7 +616,6 @@
 <!-- AI Loading -->
 <div class="eh-ai" id="aiLoading">
   <div class="eh-loading">
-    <!-- ★ AI봇 캐릭터 (눈 깜빡임 + 다리 움직임) -->
     <div class="eh-bot">
       <div class="eh-bot-body">
         <div class="eh-bot-antenna"><div class="eh-bot-antenna-ball"></div></div>
@@ -534,21 +653,16 @@
       <div class="eh-compare-before"><span class="eh-compare-label">AI 적용 전</span><span class="eh-compare-amt strikethrough" id="finalBefore">₩0</span></div>
       <div class="eh-compare-after"><span class="eh-compare-label">AI 적용 후</span><span class="eh-compare-amt highlight" id="finalAfter">₩0</span></div>
     </div>
-    <!-- ★ 절세 효과 문구 -->
     <div id="finalTaxSaving" style="display:none;padding:12px 20px;text-align:center;font-size:14px;font-weight:700;color:var(--teal);background:rgba(0,68,71,0.04);border-top:1px solid var(--gray-l)"></div>
   </div>
-
   <div class="eh-final-details">
     <div class="eh-card eh-card-breakdown"><h3>📋 분석 결과</h3><div id="finalDetails" class="eh-details-text"></div></div>
   </div>
-
-  <!-- 적용 법령: 조문 + 내용 1문장 통합 -->
   <div class="eh-card" id="finalLawWrap" style="display:none;margin-bottom:16px;padding:20px 24px">
     <h3 style="font-size:16px;font-weight:700;color:var(--teal);margin-bottom:10px">📖 근거 법령</h3>
     <div id="finalAppliedLaw" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px"></div>
     <div id="finalLawSummary" style="font-size:14px;line-height:1.65;color:var(--text-s)"></div>
   </div>
-
   <div class="eh-card eh-card-risk"><h3>⚠ 리스크</h3><div id="finalRisks" class="eh-risk-list"></div></div>
   <div class="eh-card eh-card-notice"><div class="eh-notice-icon">📋</div><div class="eh-notice-text"><strong>세무사 검토 안내</strong><p>위 분석은 AI가 세법 데이터를 기반으로 산출한 예상 결과이며, 실제 신고 시에는 반드시 세무 전문가의 검토가 필요합니다.</p></div></div>
   <div class="eh-final-actions">
