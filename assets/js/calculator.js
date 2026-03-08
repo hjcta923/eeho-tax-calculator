@@ -20,10 +20,21 @@ var formData = {
   stockListed:'listed', stockMajor:'minor', stockSme:'sme',
   // v7.2: 상속세 전용
   hasSpouse:'yes',
-  // Task 2: 상속세 복수 자산
+  childCount:'1',
+  decedentHouses:'1',
+  cohabitation:'no',
+  cohabYears:'over10',
+  heirHasHouse:'no',
+  priorGift:'no',
+  // 상속세 복수 자산
   inheritAssets:[],
-  // Task 4: 재산세 다주택
-  propProperties:[],
+  // 상속세 채무
+  inheritDebts:[],
+  // 증여세 전용
+  priorGiftFromSame:'no',
+  priorGiftAmount:0,
+  // ★ v7.5: 재산세/종부세 — 주택별 공시가격 배열
+  propHouseAmounts:[],
 };
 
 var aiState = {
@@ -31,6 +42,7 @@ var aiState = {
   applicableLaw:'', lawSummary:'',
   checklistAnswers:[], factSummary:'',
   supplementText:'', isSecondRound:false,
+  stage0Analysis: null,  // ★ /generate-questions → /confirm → /report 연결용
 };
 
 var currentStep        = 1;
@@ -73,7 +85,6 @@ function safeParse(data){
   }
   return null;
 }
-/* 영문 변수명(snake_case) 제거 + 불필요 텍스트 정리 */
 function cleanVarNames(text){
   if(!text)return'';
   text=text.replace(/['"]?[a-z][a-z0-9]*(_[a-z0-9]+)+['"]?/gi,'').trim();
@@ -81,8 +92,6 @@ function cleanVarNames(text){
   text=text.replace(/\s{2,}/g,' ').replace(/[,.\s]+$/,'').trim();
   return text;
 }
-
-/* ★ v7.4: 금액 입력 폰트 자동 축소 */
 function autoFitAmount(el){
   var len=el.val().length;
   if(len>15) el.css('font-size','18px');
@@ -90,7 +99,6 @@ function autoFitAmount(el){
   else if(len>9) el.css('font-size','28px');
   else el.css('font-size','');
 }
-
 function numToKorean(n){
   if(!n||n<=0)return'';
   var units=['','만','억','조'],parts=[],idx=0;
@@ -111,8 +119,6 @@ function numToKorean(n){
 
 /* ================================================================
    buildPayload — 백엔드 JSON Payload 명세서 기반
-   규칙 ① calculated_data 누락 방지
-   규칙 ② 모름 값 → "모름" 문자열 전송
    ================================================================ */
 function buildPayload(freeText){
   function safe(v){return(v===undefined||v===null||v==='')? '모름':v;}
@@ -128,7 +134,6 @@ function buildPayload(freeText){
   var resideMap    = {'0':'없음','2':'2년+','5':'5년+','10':'10년+','unknown':'모름'};
   var resideStr    = resideMap[formData.reside]||'모름';
 
-  // asset_type 결정
   var assetTypeStr;
   if(formData.assetType==='stock') assetTypeStr='주식';
   else assetTypeStr = MAP_TYPE_ASSET[formData.reSubType]||'모름';
@@ -170,11 +175,41 @@ function buildPayload(freeText){
   }
   if(formData.taxType==='inherit'){
     conditionInfo.has_spouse = formData.hasSpouse==='yes'?'여':'부';
+    conditionInfo.child_count = formData.childCount;
+    conditionInfo.decedent_houses = formData.decedentHouses;
+    conditionInfo.cohabitation = formData.cohabitation==='yes'?'여':(formData.cohabitation==='no'?'부':'모름');
+    if(formData.cohabitation==='yes'){
+      conditionInfo.cohab_years = ({'under5':'5년 미만','5to10':'5년~10년','over10':'10년 이상'})[formData.cohabYears]||'모름';
+    }
+    conditionInfo.heir_has_house = formData.heirHasHouse==='yes'?'여':(formData.heirHasHouse==='no'?'부':'모름');
+    conditionInfo.prior_gift = formData.priorGift==='yes'?'여':(formData.priorGift==='no'?'부':'모름');
     if(formData.inheritAssets.length>0){
       conditionInfo.inherit_assets = formData.inheritAssets.map(function(a){
         return {type:a.type, amount:a.amount};
       });
     }
+    // 채무 데이터 전달
+    if(formData.inheritDebts.length>0){
+      var totalDebt=0;
+      conditionInfo.inherit_debts = formData.inheritDebts.map(function(d){
+        totalDebt+=d.amount||0;
+        return {type:d.type, amount:d.amount};
+      });
+      conditionInfo.total_debt = totalDebt;
+    }
+  }
+  // ★ 증여세 전용 조건
+  if(formData.taxType==='gift'){
+    var relLabel=({'child_adult':'직계비속(성인 자녀)','child_minor':'직계비속(미성년 자녀)','spouse':'배우자','parent':'직계존속(부모)','other':'기타 친족'})[formData.giftRelation]||'모름';
+    conditionInfo.gift_relation = relLabel;
+    conditionInfo.prior_gift_from_same = formData.priorGiftFromSame==='yes'?'여':(formData.priorGiftFromSame==='no'?'부':'모름');
+    if(formData.priorGiftFromSame==='yes' && formData.priorGiftAmount>0){
+      conditionInfo.prior_gift_amount = formData.priorGiftAmount;
+    }
+  }
+  // ★ v7.5: 재산세/종부세 — 주택별 공시가격 전달
+  if(formData.taxType==='prop' && formData.propHouseAmounts.length>0){
+    conditionInfo.prop_house_prices = formData.propHouseAmounts.filter(function(a){return a>0;});
   }
 
   return {
@@ -193,7 +228,6 @@ function buildPayload(freeText){
 
 /* ================================================================
    callAPI — WordPress AJAX 프록시 경유
-   브라우저 → admin-ajax.php(eeho_api_proxy) → Cloud Run
    ================================================================ */
 function callAPI(payload, endpoint){
   endpoint = endpoint||'/generate-questions';
@@ -277,11 +311,14 @@ function configStep2(){
   var labels={cgt:'양도가액',acq:'취득가액',prop:'공시가격',gift:'증여가액',inherit:'상속재산가액'};
   $('#amountLabel').text(labels[t]||'금액');
 
-  // 상속세 복수 자산 / 일반 금액 토글
+  // 모든 특수 섹션 기본 숨김
   $('#inheritMultiAsset').hide();
+  $('#propHouseSection').hide();
   $('#singleAmountSection').show();
+  $('#reAddressWrap').show();
+  $('#reTypeDropWrap').show();
 
-  // 부동산 유형 드롭다운 옵션 교체 (Task 3)
+  // 부동산 유형 드롭다운 옵션 교체
   updatePropertyTypeOptions(t);
 
   if(t==='cgt'){
@@ -290,27 +327,35 @@ function configStep2(){
   } else if(t==='acq'){
     $('#assetTabs').hide();formData.assetType='re';
     $('#s2Title').text('취득 대상과 금액을 입력하세요');
-  } else if(t==='prop'){
-    $('#assetTabs').hide();formData.assetType='re';
-    $('#s2Title').text('보유 부동산의 공시가격을 입력하세요');
   } else if(t==='gift'){
     $('#assetTabs').show();$('#tabStock2,#tabCash2').removeClass('dis').show();
     $('#s2Title').text('증여 재산과 금액을 입력하세요');
+
   } else if(t==='inherit'){
+    /* ★ 상속세: 주소/부동산유형 불필요 — 복수 자산 입력만 표시 */
     $('#assetTabs').hide();formData.assetType='re';
     $('#s2Title').text('상속 재산 정보를 입력하세요');
-    // Task 2: 복수 자산 입력 UI 표시
     $('#singleAmountSection').hide();
+    $('#reAddressWrap').hide();
+    $('#reTypeDropWrap').hide();
     $('#inheritMultiAsset').show();
-    if(formData.inheritAssets.length===0){
-      addInheritAssetRow();
-    }
+    if(formData.inheritAssets.length===0) addInheritAssetRow();
     updateInheritTotal();
+
+  } else if(t==='prop'){
+    /* ★ 재산세/종부세: 주소/부동산유형 불필요 — 보유주택 통합 입력 */
+    $('#assetTabs').hide();formData.assetType='re';
+    $('#s2Title').text('보유 부동산의 공시가격을 입력하세요');
+    $('#singleAmountSection').hide();
+    $('#reAddressWrap').hide();
+    $('#reTypeDropWrap').hide();
+    $('#propHouseSection').show();
+    initPropHouseRows();
   }
   updateReTypes();
 }
 
-/* Task 3: 취득세 부동산 유형 실무 조정 */
+/* 취득세 부동산 유형 실무 조정 */
 function updatePropertyTypeOptions(taxType){
   var $sel=$('#reTypeSelect');
   var opts;
@@ -339,7 +384,103 @@ function updatePropertyTypeOptions(taxType){
   formData.reSubType=$sel.val();
 }
 
-/* Task 2: 상속세 복수 자산 행 추가/삭제 */
+/* ================================================================
+   ★ v7.5: 재산세/종부세 — 보유주택 통합 입력 (Step 2)
+   ================================================================ */
+function getHouseCount(){
+  var h=formData.houses;
+  if(h==='1') return 1;
+  if(h==='2') return 2;
+  if(h==='3') return 3;
+  if(h==='multi') return 4;
+  return 1; // unknown → 1주택으로 시작
+}
+
+function initPropHouseRows(){
+  var count=getHouseCount();
+  formData.propHouseAmounts=[];
+  var $list=$('#propDynamicHouses').empty();
+
+  for(var i=0;i<count;i++){
+    formData.propHouseAmounts.push(0);
+    appendPropHouseRow($list, i);
+  }
+
+  // 4주택 이상일 때 추가 버튼 표시
+  $('#addPropHouseExtra').toggle(formData.houses==='multi');
+  // 2주택 이상이면 합계 표시
+  $('#propTotalWrap').toggle(count>=2);
+  updatePropTotal();
+}
+
+function appendPropHouseRow($list, idx){
+  var html='<div class="eh-prop-row" data-idx="'+idx+'">'
+    +'<span class="eh-prop-label">주택 '+(idx+1)+'</span>'
+    +'<div class="eh-amount-box sm" style="flex:1">'
+    +'<div class="eh-amount-display sm"><input type="text" class="eh-amount-input sm eh-prop-price" placeholder="공시가격" inputmode="numeric" data-idx="'+idx+'"><span class="eh-amount-unit">원</span></div>'
+    +'<div class="eh-amount-kr eh-prop-price-kr"></div>'
+    +'</div>';
+  // 4주택 이상 모드에서 4번째 이후 행만 삭제 가능
+  if(formData.houses==='multi' && idx>=4){
+    html+='<button class="eh-btn-icon eh-prop-extra-remove" title="삭제">&times;</button>';
+  }
+  html+='</div>';
+  $list.append(html);
+}
+
+/* 주택 수 변경 시 행 재구성 */
+$('#selHousesProp').on('change',function(){
+  formData.houses=$(this).val();
+  initPropHouseRows();
+});
+
+/* 공시가격 입력 */
+A.on('input','.eh-prop-price',function(){
+  var v=raw($(this).val()),n=parseInt(v)||0;
+  $(this).val(n>0?fmt(n):'');
+  var idx=parseInt($(this).data('idx'));
+  if(!isNaN(idx) && idx<formData.propHouseAmounts.length){
+    formData.propHouseAmounts[idx]=n;
+  }
+  $(this).closest('.eh-prop-row').find('.eh-prop-price-kr').text(numToKorean(n));
+  updatePropTotal();
+});
+
+/* 4주택 이상: 추가 */
+$('#addPropHouseExtra').on('click',function(){
+  var idx=formData.propHouseAmounts.length;
+  formData.propHouseAmounts.push(0);
+  appendPropHouseRow($('#propDynamicHouses'), idx);
+  $('#propTotalWrap').show();
+  updatePropTotal();
+});
+
+/* 4주택 이상: 삭제 */
+A.on('click','.eh-prop-extra-remove',function(){
+  var $row=$(this).closest('.eh-prop-row');
+  var idx=parseInt($row.data('idx'));
+  formData.propHouseAmounts.splice(idx,1);
+  $row.remove();
+  // 인덱스 재정렬
+  $('#propDynamicHouses .eh-prop-row').each(function(i){
+    $(this).attr('data-idx',i);
+    $(this).find('.eh-prop-label').text('주택 '+(i+1));
+    $(this).find('.eh-prop-price').attr('data-idx',i);
+  });
+  updatePropTotal();
+});
+
+function updatePropTotal(){
+  var sum=0;
+  formData.propHouseAmounts.forEach(function(a){sum+=a||0;});
+  formData.amount=sum;
+  $('#propTotalAmt').text('₩'+fmt(sum));
+  $('#propTotalKr').text(numToKorean(sum));
+}
+
+/* ================================================================
+   상속세 복수 자산
+   ================================================================ */
 function addInheritAssetRow(){
   var idx=formData.inheritAssets.length;
   formData.inheritAssets.push({type:'부동산',amount:0});
@@ -365,7 +506,6 @@ A.on('click','.eh-inherit-remove',function(){
   var idx=$row.index();
   formData.inheritAssets.splice(idx,1);
   $row.remove();
-  // 인덱스 재정렬
   $('#inheritAssetList .eh-inherit-row').each(function(i){$(this).attr('data-idx',i);});
   updateInheritTotal();
 });
@@ -391,43 +531,72 @@ function updateInheritTotal(){
   $('#inheritTotalKr').text(numToKorean(sum));
 }
 
-/* Task 4: 재산세 다주택 추가 행 */
-function addPropPropertyRow(){
-  var idx=formData.propProperties.length;
-  formData.propProperties.push({amount:0});
-  var html='<div class="eh-prop-row" data-idx="'+idx+'">'
-    +'<span class="eh-prop-label">주택 '+(idx+2)+'</span>'
-    +'<div class="eh-amount-box sm" style="flex:1">'
-    +'<div class="eh-amount-display sm"><input type="text" class="eh-amount-input sm eh-prop-amt" placeholder="공시가격" inputmode="numeric"><span class="eh-amount-unit">원</span></div>'
-    +'<div class="eh-amount-kr eh-prop-amt-kr"></div>'
+/* ================================================================
+   ★ 상속세 채무 입력
+   ================================================================ */
+function addInheritDebtRow(){
+  var idx=formData.inheritDebts.length;
+  formData.inheritDebts.push({type:'금융채무',amount:0});
+  var html='<div class="eh-inherit-row eh-debt-row" data-idx="'+idx+'">'
+    +'<select class="eh-select-input eh-debt-type" style="flex:1;min-width:120px">'
+    +'<option value="금융채무" selected>금융채무 (대출)</option>'
+    +'<option value="임대보증금">임대보증금</option>'
+    +'<option value="미납세금">미납세금</option>'
+    +'<option value="장례비용">장례비용</option>'
+    +'<option value="기타채무">기타 채무</option>'
+    +'</select>'
+    +'<div class="eh-amount-box sm" style="flex:2">'
+    +'<div class="eh-amount-display sm"><input type="text" class="eh-amount-input sm eh-debt-amt" placeholder="0" inputmode="numeric"><span class="eh-amount-unit">원</span></div>'
+    +'<div class="eh-amount-kr eh-debt-amt-kr"></div>'
     +'</div>'
-    +'<button class="eh-btn-icon eh-prop-remove" title="삭제">&times;</button>'
+    +'<button class="eh-btn-icon eh-debt-remove" title="삭제">&times;</button>'
     +'</div>';
-  $('#propHouseList').append(html);
+  $('#inheritDebtList').append(html);
+  $('#debtTotalWrap').show();
 }
-A.on('click','#addPropHouse',function(){addPropPropertyRow();});
-A.on('click','.eh-prop-remove',function(){
-  var $row=$(this).closest('.eh-prop-row');
+A.on('click','#addInheritDebt',function(){addInheritDebtRow();});
+A.on('click','.eh-debt-remove',function(){
+  var $row=$(this).closest('.eh-debt-row');
   var idx=$row.index();
-  formData.propProperties.splice(idx,1);
+  formData.inheritDebts.splice(idx,1);
   $row.remove();
-  $('#propHouseList .eh-prop-row').each(function(i){
-    $(this).attr('data-idx',i);
-    $(this).find('.eh-prop-label').text('주택 '+(i+2));
-  });
+  $('#inheritDebtList .eh-debt-row').each(function(i){$(this).attr('data-idx',i);});
+  updateDebtTotal();
+  if(formData.inheritDebts.length===0) $('#debtTotalWrap').hide();
 });
-A.on('input','.eh-prop-amt',function(){
+A.on('input','.eh-debt-amt',function(){
   var v=raw($(this).val()),n=parseInt(v)||0;
   $(this).val(n>0?fmt(n):'');
-  var $row=$(this).closest('.eh-prop-row');
+  var $row=$(this).closest('.eh-debt-row');
   var idx=$row.index();
-  if(formData.propProperties[idx]) formData.propProperties[idx].amount=n;
-  $row.find('.eh-prop-amt-kr').text(numToKorean(n));
+  if(formData.inheritDebts[idx]) formData.inheritDebts[idx].amount=n;
+  $row.find('.eh-debt-amt-kr').text(numToKorean(n));
+  updateDebtTotal();
 });
+A.on('change','.eh-debt-type',function(){
+  var $row=$(this).closest('.eh-debt-row');
+  var idx=$row.index();
+  if(formData.inheritDebts[idx]) formData.inheritDebts[idx].type=$(this).val();
+});
+function updateDebtTotal(){
+  var sum=0;
+  formData.inheritDebts.forEach(function(d){sum+=d.amount||0;});
+  $('#debtTotalAmt').text('-₩'+fmt(sum));
+  $('#debtTotalKr').text(sum>0?numToKorean(sum):'');
+}
 
+/* ================================================================
+   Step 2 공통 UI
+   ================================================================ */
 function updateReTypes(){
   var isRe=formData.assetType==='re',isSt=formData.assetType==='stock';
-  $('#reTypeDropWrap').toggle(isRe);$('#reAddressWrap').toggle(isRe);
+  var t=formData.taxType;
+  // 상속세/재산세에서는 주소/부동산유형 항상 숨김
+  if(t==='inherit'||t==='prop'){
+    $('#reTypeDropWrap').hide();$('#reAddressWrap').hide();
+  } else {
+    $('#reTypeDropWrap').toggle(isRe);$('#reAddressWrap').toggle(isRe);
+  }
   $('#stockNameWrap').toggleClass('eh-hd',!isSt);
 }
 A.on('click','.eh-asset-tab',function(){
@@ -454,18 +623,39 @@ $('#inpAcqPrice').on('input',function(){
 });
 $('#inpAddress').on('input',function(){formData.address=$(this).val();});
 $('#inpStockName').on('input',function(){formData.stockName=$(this).val();});
+
+/* ================================================================
+   Step 2 → Step 3 (또는 바로 Step 4)
+   ================================================================ */
 $('#toStep3').on('click',function(){
-  // 상속세: 복수 자산 합계 검증
-  if(formData.taxType==='inherit'){
+  var t=formData.taxType;
+
+  // 금액 검증
+  if(t==='inherit'){
     updateInheritTotal();
     if(formData.amount<=0){alert('상속 재산 금액을 입력해주세요.');return;}
+  } else if(t==='prop'){
+    updatePropTotal();
+    if(formData.amount<=0){alert('공시가격을 입력해주세요.');return;}
   } else {
     if(formData.amount<=0){alert('금액을 입력해주세요.');return;}
   }
-  if(formData.assetType==='re' && formData.taxType!=='inherit'){
+  // 부동산 주소 필수 (상속세/재산세 제외)
+  if(formData.assetType==='re' && t!=='inherit' && t!=='prop'){
     var addr=$('#inpAddress').val().trim();
     if(!addr){alert('주소를 입력해주세요.');$('#inpAddress').focus();return;}
   }
+
+  // ★ 재산세/종부세: Step 3 스킵 → 바로 계산 후 Step 4로
+  if(t==='prop'){
+    var result=calculateTax(formData);
+    currentEstimatedTax=result.total;
+    lastCalcResult=result;
+    renderResult(result);
+    goStep(4);
+    return;
+  }
+
   configStep3();goStep(3);
 });
 $('#backStep1').on('click',function(){goStep(1);});
@@ -475,11 +665,12 @@ $('#backStep1').on('click',function(){goStep(1);});
    ================================================================ */
 function configStep3(){
   var t=formData.taxType, asset=formData.assetType;
-  // 모든 필드 기본 숨김
+  // 모든 필드 기본 숨김 + 제목 초기화
+  A.find('.eh-step[data-step="3"] .eh-title').text('상세 조건을 선택하세요');
   $('#f3StockListed,#f3StockMajor,#f3StockSme').addClass('eh-hd');
-  $('#f3Spouse').addClass('eh-hd');
-  $('#propMultiHouse').hide();
   $('#f3GiftRelation').addClass('eh-hd');
+  $('#f3GiftSection').addClass('eh-hd');
+  $('#f3InheritDebt').css('display','none');
 
   if(t==='cgt'){
     if(asset==='stock'){
@@ -494,28 +685,17 @@ function configStep3(){
     $('#f3Dates,#f3AcqPrice,#f3Reside').hide();
     $('#f3Reg,#f3Houses,#f3Area').show();
   } else if(t==='prop'){
-    $('#f3Dates,#f3AcqPrice,#f3Reg,#f3Reside,#f3Area').hide();
-    $('#f3Houses').show();
-    // Task 4: 다주택이면 추가 입력 표시
-    checkPropMultiHouse();
-  } else if(t==='gift'){
-    $('#f3Dates,#f3AcqPrice,#f3Houses,#f3Reside,#f3Area').hide();
-    $('#f3Reg').show();
-    $('#f3GiftRelation').removeClass('eh-hd');
-  } else if(t==='inherit'){
+    // ★ prop은 Step 3에 오지 않음 (Step 2에서 바로 Step 4로)
     $('#f3Dates,#f3AcqPrice,#f3Reg,#f3Houses,#f3Reside,#f3Area').hide();
-    $('#f3Spouse').removeClass('eh-hd');
-  }
-}
-
-/* Task 4: 재산세 다주택 토글 */
-function checkPropMultiHouse(){
-  var h=formData.houses;
-  if(formData.taxType==='prop' && h!=='1' && h!=='unknown'){
-    $('#propMultiHouse').show();
-    if(formData.propProperties.length===0) addPropPropertyRow();
-  } else {
-    $('#propMultiHouse').hide();
+  } else if(t==='gift'){
+    $('#f3Dates,#f3AcqPrice,#f3Houses,#f3Reside,#f3Area,#f3Reg').hide();
+    $('#f3GiftSection').removeClass('eh-hd');
+    A.find('.eh-step[data-step="3"] .eh-title').text('증여 관계 및 조건');
+  } else if(t==='inherit'){
+    // ★ 상속세: 기존 양도세 필드 숨기고 채무 입력만 표시
+    $('#f3Dates,#f3AcqPrice,#f3Reg,#f3Houses,#f3Reside,#f3Area').hide();
+    A.find('.eh-step[data-step="3"] .eh-title').text('채무 및 공제 항목');
+    $('#f3InheritDebt').css('display','block');
   }
 }
 
@@ -531,7 +711,36 @@ $('#selStockListed').on('change',function(){formData.stockListed=$(this).val();u
 $('#selStockMajor').on('change',function(){formData.stockMajor=$(this).val();});
 $('#selStockSme').on('change',function(){formData.stockSme=$(this).val();});
 $('#selSpouse').on('change',function(){formData.hasSpouse=$(this).val();});
+$('#selChildCount').on('change',function(){formData.childCount=$(this).val();});
+$('#selDecedentHouses').on('change',function(){formData.decedentHouses=$(this).val();});
+$('#selCohabitation').on('change',function(){
+  formData.cohabitation=$(this).val();
+  $('#f3CohabYears').toggle($(this).val()==='yes');
+});
+$('#selCohabYears').on('change',function(){formData.cohabYears=$(this).val();});
+$('#selHeirHasHouse').on('change',function(){formData.heirHasHouse=$(this).val();});
+$('#selPriorGift').on('change',function(){formData.priorGift=$(this).val();});
 $('#selGiftRelation').on('change',function(){formData.giftRelation=$(this).val();});
+
+/* ★ 증여세 관계 카드 클릭 */
+A.on('click','.eh-gift-rel-card',function(){
+  $('.eh-gift-rel-card').removeClass('active');
+  $(this).addClass('active');
+  var rel=$(this).data('rel');
+  formData.giftRelation=rel;
+  $('#selGiftRelation').val(rel); // 숨겨진 select도 동기화
+});
+$('#selPriorGiftFromSame').on('change',function(){
+  formData.priorGiftFromSame=$(this).val();
+  if($(this).val()==='yes'){$('#f3PriorGiftDetail').removeClass('eh-hd');}
+  else{$('#f3PriorGiftDetail').addClass('eh-hd');formData.priorGiftAmount=0;$('#inpPriorGiftAmt').val('');}
+});
+$('#inpPriorGiftAmt').on('input',function(){
+  var v=parseInt($(this).val().replace(/[^0-9]/g,''))||0;
+  $(this).val(v?v.toLocaleString():'');
+  formData.priorGiftAmount=v;
+  $('#priorGiftAmtKr').text(v?numToKr(v):'');
+});
 
 $('#stockMajorHelpBtn').on('click',function(e){e.preventDefault();$('#stockMajorHelpPopup').toggleClass('eh-hd');});
 $('#stockMajorHelpClose').on('click',function(){$('#stockMajorHelpPopup').addClass('eh-hd');});
@@ -546,10 +755,7 @@ A.on('click','.eh-chips .eh-chip',function(){
   else if(g==='regulated')formData.regulated=v;
 });
 $('#selRegulated').on('change',function(){formData.regulated=$(this).val();});
-$('#selHouses').on('change',function(){
-  formData.houses=$(this).val();
-  checkPropMultiHouse(); // Task 4
-});
+$('#selHouses').on('change',function(){formData.houses=$(this).val();});
 $('#selReside').on('change',function(){formData.reside=$(this).val();});
 $('#selArea').on('change',function(){formData.area=$(this).val();});
 $('#inpAcqDate').on('change',function(){formData.acqDate=$(this).val();});
@@ -574,7 +780,7 @@ $('#doCalc').on('click',function(){
 });
 
 /* ================================================================
-   누진세율 헬퍼 (소득세법 §55, 2024년 기준)
+   누진세율 헬퍼
    ================================================================ */
 function calcProgressiveTax(base){
   if(base<=0)              return 0;
@@ -589,7 +795,7 @@ function calcProgressiveTax(base){
 }
 
 /* ================================================================
-   ★ [v7.3] calculateTax() — 5개 세목 (비과세 + 증여공제 수정)
+   ★ calculateTax() — 5개 세목
    ================================================================ */
 function calculateTax(fd){
   var amt=fd.amount||0, t=fd.taxType, items=[], total=0;
@@ -597,7 +803,6 @@ function calculateTax(fd){
   /* ── 양도소득세 ── */
   if(t==='cgt'){
     if(fd.assetType==='stock'){
-      /* 주식 CGT */
       var gain=Math.max(0,amt-(fd.acqPrice||0));
       var holdMonths=0;
       if(fd.acqDate&&fd.saleDate){
@@ -622,7 +827,6 @@ function calculateTax(fd){
       items=[{name:'양도소득세',amount:yangdoTax},{name:'지방소득세',amount:localTax}];
 
     } else {
-      /* 부동산 CGT */
       var gain=Math.max(0,amt-(fd.acqPrice||0));
       var holdMonths=0;
       if(fd.acqDate&&fd.saleDate){
@@ -633,35 +837,28 @@ function calculateTax(fd){
       var isUnder1yr=holdMonths>0&&holdMonths<12;
       var is1to2yr=holdMonths>=12&&holdMonths<24;
       var isHousing=(fd.reSubType==='apt'||fd.reSubType==='villa'||fd.reSubType==='officetel'||fd.reSubType==='rights');
-
       var houseNum=1;
       if(fd.houses==='2')houseNum=2;else if(fd.houses==='3'||fd.houses==='multi')houseNum=3;
       var isJungKwa=(fd.regulated==='yes')&&(houseNum>=2);
       var jungKwaAddRate=(houseNum===2)?0.20:(houseNum>=3?0.30:0);
 
-      /* ★ [v7.3] 1세대1주택 비과세 판정 (소득세법 §89①3호) */
       var isOneHouseTaxFree=false;
       if(fd.houses==='1' && isHousing && holdFullYears>=2){
         if(fd.regulated==='yes'){
-          /* 조정대상지역: 보유 2년 + 거주 2년 이상 */
           var resideYrs=fd.reside==='2'?2:fd.reside==='5'?5:fd.reside==='10'?10:0;
           if(resideYrs>=2) isOneHouseTaxFree=true;
         } else {
-          /* 비조정지역: 보유 2년 이상이면 비과세 */
           isOneHouseTaxFree=true;
         }
       }
 
       if(isOneHouseTaxFree){
         if(amt<=1200000000){
-          /* 양도가 12억 이하: 전액 비과세 */
           return {items:[
-            {name:'양도소득세',amount:0},
-            {name:'지방소득세',amount:0},
+            {name:'양도소득세',amount:0},{name:'지방소득세',amount:0},
             {name:'※ 1세대1주택 비과세 (소득세법 §89)',amount:0}
           ],total:0};
         } else {
-          /* 양도가 12억 초과: 초과분만 안분 과세 */
           gain=Math.round(gain*(amt-1200000000)/amt);
           items.push({name:'※ 1세대1주택 고가주택 — 12억 초과분 안분 과세',amount:0});
         }
@@ -690,7 +887,7 @@ function calculateTax(fd){
       items.splice(1,0,{name:'지방소득세',amount:localTax});
     }
 
-  /* ── 취득세 (v7.2) ── */
+  /* ── 취득세 ── */
   } else if(t==='acq'){
     function normalAcqRate(price){
       if(price<=600000000)return 0.01;
@@ -699,7 +896,6 @@ function calculateTax(fd){
     }
     var houseNum=fd.houses==='1'?1:fd.houses==='2'?2:fd.houses==='3'?3:fd.houses==='multi'?4:1;
     var isReg=(fd.regulated==='yes');
-    // Task 3: 비주택은 일률 4% (주택 중과 미적용)
     var isNonHousing=(fd.reSubType==='officetel_com'||fd.reSubType==='land_gen'||fd.reSubType==='land_farm'||fd.reSubType==='building_gen');
     var rate;
     if(isNonHousing){
@@ -720,7 +916,7 @@ function calculateTax(fd){
     if(isNonHousing) items.push({name:'※ 비주택 일반세율 적용',amount:0});
     total=acqTax+eduTax+ruralTax;
 
-  /* ── 재산세/종부세 (v7.2 + Task 4 다주택) ── */
+  /* ── 재산세/종부세 (★ v7.5: propHouseAmounts 배열 사용) ── */
   } else if(t==='prop'){
     var fairRatio=0.60;
     function calcPropertyTax(base){
@@ -741,9 +937,10 @@ function calculateTax(fd){
       return Math.round(base*0.027-101800000);
     }
 
-    // Task 4: 다주택 — 각 주택별 재산세 개별 계산, 종부세는 합계 기준
-    var allAmounts=[amt]; // 주택1(기본 입력)
-    (fd.propProperties||[]).forEach(function(p){if(p.amount>0)allAmounts.push(p.amount);});
+    // ★ v7.5: propHouseAmounts 배열에서 직접 읽기
+    var allAmounts = (fd.propHouseAmounts && fd.propHouseAmounts.length>0)
+      ? fd.propHouseAmounts.filter(function(a){return a>0;})
+      : [amt];
 
     var totalPropTax=0, totalPropEdu=0, totalCity=0;
     allAmounts.forEach(function(propAmt){
@@ -770,7 +967,7 @@ function calculateTax(fd){
     if(allAmounts.length>1) items.push({name:'※ '+allAmounts.length+'주택 합산 기준',amount:0});
     total=totalPropTax+totalPropEdu+totalCity+jonbuTax+jonbuEduTax;
 
-  /* ── 증여세 (v7.3 — 관계별 증여공제) ── */
+  /* ── 증여세 ── */
   } else if(t==='gift'){
     function calcGiftTax(base){
       if(base<=0)return 0;
@@ -780,29 +977,22 @@ function calculateTax(fd){
       if(base<=3000000000)return Math.round(base*0.40-160000000);
       return Math.round(base*0.50-460000000);
     }
-    /* ★ [v7.3] 관계별 증여재산공제 (상증세법 §53) */
     var GIFT_DEDUCTION={
-      'spouse':600000000,       /* 배우자: 6억 */
-      'child_adult':50000000,   /* 직계비속(성인): 5천만 */
-      'child_minor':20000000,   /* 직계비속(미성년): 2천만 */
-      'parent':50000000,        /* 직계존속: 5천만 */
-      'other':10000000          /* 기타친족: 1천만 */
+      'spouse':600000000,'child_adult':50000000,'child_minor':20000000,
+      'parent':50000000,'other':10000000
     };
     var deduction=GIFT_DEDUCTION[fd.giftRelation]||50000000;
     var deductionLabel=({
-      'spouse':'배우자 공제 6억',
-      'child_adult':'직계비속(성인) 공제 5천만',
-      'child_minor':'직계비속(미성년) 공제 2천만',
-      'parent':'직계존속 공제 5천만',
+      'spouse':'배우자 공제 6억','child_adult':'직계비속(성인) 공제 5천만',
+      'child_minor':'직계비속(미성년) 공제 2천만','parent':'직계존속 공제 5천만',
       'other':'기타친족 공제 1천만'
     })[fd.giftRelation]||'증여공제 5천만';
-
     var taxBase=Math.max(0,amt-deduction);
     var giftTax=calcGiftTax(taxBase);
     items=[{name:'증여세',amount:giftTax},{name:'※ '+deductionLabel+' 적용',amount:0}];
     total=giftTax;
 
-  /* ── 상속세 (v7.2) ── */
+  /* ── 상속세 (★ 채무 공제 반영) ── */
   } else if(t==='inherit'){
     function calcInheritTax(base){
       if(base<=0)return 0;
@@ -812,12 +1002,18 @@ function calculateTax(fd){
       if(base<=3000000000)return Math.round(base*0.40-160000000);
       return Math.round(base*0.50-460000000);
     }
+    // 채무 합계 산출
+    var totalDebt=0;
+    (fd.inheritDebts||[]).forEach(function(d){totalDebt+=d.amount||0;});
+    var netAsset=Math.max(0, amt-totalDebt); // 순상속재산 = 총상속재산 - 채무
+
     var bulkDeduction=500000000;
     var spouseDeduction=(fd.hasSpouse==='yes')?500000000:0;
     var totalDeduction=bulkDeduction+spouseDeduction;
-    var taxBase=Math.max(0,amt-totalDeduction);
+    var taxBase=Math.max(0,netAsset-totalDeduction);
     var inheritTax=calcInheritTax(taxBase);
     items=[{name:'상속세',amount:inheritTax}];
+    if(totalDebt>0) items.push({name:'※ 채무공제 '+fmt(totalDebt)+'원 적용',amount:0});
     if(spouseDeduction>0) items.push({name:'※ 배우자 상속공제 5억 적용',amount:0});
     total=inheritTax;
   }
@@ -840,10 +1036,14 @@ function renderResult(data){
   $('#resultItems').html(h);
 }
 
-$('#backStep3').on('click',function(){goStep(3);});
+$('#backStep3').on('click',function(){
+  // ★ 재산세/종부세는 Step 3을 스킵했으므로 Step 2로 돌아감
+  if(formData.taxType==='prop'){goStep(2);return;}
+  goStep(3);
+});
 $('#resetAll').on('click',function(){
-  formData={taxType:'cgt',assetType:'re',reSubType:'apt',amount:0,address:'',stockName:'',regulated:'no',houses:'1',saleDate:'',acqDate:'',reside:'2',area:'under85',acqPrice:0,stockListed:'listed',stockMajor:'minor',stockSme:'sme',hasSpouse:'yes',giftRelation:'child_adult',inheritAssets:[],propProperties:[]};
-  aiState={payload:{},userText:'',callCount:0,sessionId:'',applicableLaw:'',lawSummary:'',checklistAnswers:[],factSummary:'',supplementText:'',isSecondRound:false};
+  formData={taxType:'cgt',assetType:'re',reSubType:'apt',amount:0,address:'',stockName:'',regulated:'no',houses:'1',saleDate:'',acqDate:'',reside:'2',area:'under85',acqPrice:0,stockListed:'listed',stockMajor:'minor',stockSme:'sme',hasSpouse:'yes',childCount:'1',decedentHouses:'1',cohabitation:'no',cohabYears:'over10',heirHasHouse:'no',priorGift:'no',giftRelation:'child_adult',priorGiftFromSame:'no',priorGiftAmount:0,inheritAssets:[],inheritDebts:[],propHouseAmounts:[]};
+  aiState={payload:{},userText:'',callCount:0,sessionId:'',applicableLaw:'',lawSummary:'',checklistAnswers:[],factSummary:'',supplementText:'',isSecondRound:false,gapAnalysis:null,confirmData:null,stage0Analysis:null};
   currentEstimatedTax=0;lastCalcResult={items:[],total:0};
   $('#inpAmount,#inpAcqPrice,#inpAddress,#inpStockName').val('');
   $('#inpAcqDate,#inpSaleDate').val('');
@@ -854,41 +1054,60 @@ $('#resetAll').on('click',function(){
   $('#reTypeSelect').val('apt');$('#selRegulated').val('no');$('#selHouses').val('1');
   $('#selReside').val('2');$('#selArea').val('under85');
   $('#selStockListed').val('listed');$('#selStockMajor').val('minor');$('#selStockSme').val('sme');
-  $('#selSpouse').val('yes');$('#selGiftRelation').val('child_adult');
+  $('#selSpouse').val('yes');$('#selChildCount').val('1');$('#selDecedentHouses').val('1');
+  $('#selCohabitation').val('no');$('#selCohabYears').val('over10');$('#f3CohabYears').hide();
+  $('#selHeirHasHouse').val('no');$('#selPriorGift').val('no');
+  $('#selGiftRelation').val('child_adult');$('#selPriorGiftFromSame').val('no');
+  $('#f3PriorGiftDetail').addClass('eh-hd');$('#inpPriorGiftAmt').val('');$('#priorGiftAmtKr').text('');
+  $('.eh-gift-rel-card').removeClass('active').first().addClass('active');
+  $('#f3GiftSection').addClass('eh-hd');
+  $('#selHousesProp').val('1');
   $('#amountKr,#acqPriceKr').text('');
-  $('#inheritAssetList,#propHouseList').empty();
-  $('#inheritMultiAsset,#propMultiHouse').hide();
+  $('#inheritAssetList').empty();$('#propDynamicHouses').empty();$('#inheritDebtList').empty();
+  $('#inheritMultiAsset,#propHouseSection').hide();$('#debtTotalWrap').hide();$('#f3InheritDebt').css('display','none');
   $('#regHelpPopup,#stockMajorHelpPopup').addClass('eh-hd');
   goStep(1);
 });
 
 /* ================================================================
-   ===  AI FLOW — 배포된 백엔드 main.py v1.0 정확 매칭  ===
-   ──────────────────────────────────────────────────────────────
-   /generate-questions  입력: AnalyzeRequest (= buildPayload)
-                        출력: {status:"need_more_info", questions:[{variable,question,category,...}]}
-   /confirm             입력: ConfirmRequest {session_id, original_request, checklist_answers:[{variable,answer}]}
-                        출력: {사실관계:{사실관계_요약, 요건_충족_판단}, data_quality}
-   /report              입력: AnalyzeRequest + additional_data
-                        출력: {status:"success", result_type, 리포트, confidence_pct, tax_after_applied, base_tax}
+   ===  AI FLOW  ===
    ================================================================ */
 
-$('#startAI').on('click',function(){resetAIState();showAI('#aiTextPhase');});
+/* ★ 세목별 AI 입력 예시 */
+function updateAIExamples(){
+  var t=formData.taxType;
+  var examples={
+    'cgt':[ '"올해 결혼을 하면서 2주택이 되었어요"',
+            '"부모님이 2주택자인데, 송파구 소재 아파트를 저가양수 하려고 해요."',
+            '"작년에 이사하려고 분당 아파트를 하나 더 샀어요. 기존 송파 아파트는 언제 팔아야 하나요?"' ],
+    'inherit':[ '"아버지가 돌아가시면서 강남 아파트와 예금 3억을 남기셨어요. 어머니와 자녀 2명이 상속인입니다."',
+                '"피상속인이 2주택자였는데, 상속주택 특례를 받을 수 있을까요?"',
+                '"상속받은 부동산에 담보대출 2억이 남아있고, 장례비용도 공제 가능한지 궁금합니다."' ],
+    'gift':[ '"부모님이 아파트를 시가보다 싸게 넘겨주려고 해요."',
+             '"배우자에게 5억 상당의 부동산을 증여하려고 합니다."',
+             '"미성년 자녀 명의로 주식을 증여하려고 하는데 공제가 얼마인가요?"' ],
+    'acq':[ '"신혼부부 첫 주택 취득이라 감면받을 수 있는지 알고 싶어요."',
+            '"조정대상지역에서 2주택째를 취득하려고 합니다."',
+            '"상업용 오피스텔을 법인이 아닌 개인으로 취득하면 세율이 어떻게 되나요?"' ],
+    'prop':[ '"1주택자인데 공시가격이 15억이라 종부세가 걱정됩니다."',
+             '"2주택 보유 중인데 종부세 합산 기준이 궁금합니다."',
+             '"재산세와 종부세를 줄일 수 있는 방법이 있을까요?"' ]
+  };
+  var ex=examples[t]||examples['cgt'];
+  $('#aiEx1').text(ex[0]);$('#aiEx2').text(ex[1]);$('#aiEx3').text(ex[2]);
+}
+
+$('#startAI').on('click',function(){resetAIState();updateAIExamples();showAI('#aiTextPhase');});
 $('#aiBackToResult').on('click',function(){resetAIState();goStep(4);});
 $('#aiTextInput').on('input',function(){$('#aiTxtCnt').text($(this).val().length);});
 
-/* ════════════════════════════════════════════════════════════════
-   Phase 1: /generate-questions → 체크리스트
-   입력: buildPayload() 그대로 (AnalyzeRequest 1:1 대응)
-   ════════════════════════════════════════════════════════════════ */
+/* Phase 1: /generate-questions */
 $('#aiSendText').on('click',function(){
   var text=$('#aiTextInput').val().trim();
   if(!text){alert('상황을 입력해주세요.');return;}
   aiState.userText  = text;
   aiState.callCount = 0;
   aiState.sessionId = generateSessionId();
-
-  // buildPayload()는 AnalyzeRequest 모델과 1:1 대응
   aiState.payload = buildPayload(text);
 
   console.log('[EEHO] ★ /generate-questions payload:', JSON.stringify(aiState.payload,null,2));
@@ -897,71 +1116,57 @@ $('#aiSendText').on('click',function(){
   callAPI(aiState.payload, '/generate-questions')
     .then(function(data){
       console.log('[EEHO] ← /generate-questions:', JSON.stringify(data).substring(0,800));
-
-      // WP 프록시 에러 감지
-      if(data._error || data.result){
-        throw new Error(data.result || 'API 서버 오류');
-      }
-
+      // ★ _error는 프록시 오류, result는 백엔드 오류 메시지 (status 없이 result만 있으면 오류)
+      if(data._error) throw new Error(data._error);
+      if(data.result && !data.status && !data.questions) throw new Error(data.result);
       handleGenerateQuestionsResponse(data);
     })
-    .catch(handleError);
+    .catch(function(err){
+      console.error('[EEHO] /generate-questions 오류:', err);
+      // ★ 세목별 맞춤 안내 메시지
+      var taxLabel=MAP_TAX_CATEGORY[formData.taxType]||'세금';
+      alert('AI 분석 중 오류가 발생했습니다.\n\n'+String(err)+'\n\n'
+        +'입력하신 상황을 좀 더 구체적으로 작성해 주세요.\n'
+        +'예: '+taxLabel+'와 관련된 구체적인 상황(자산 종류, 금액, 관계 등)을 포함해 주시면 정확한 분석이 가능합니다.');
+      showAI('#aiTextPhase');
+    });
 });
 
-/* /generate-questions 응답 처리 */
 function handleGenerateQuestionsResponse(data){
   if(!data) throw new Error('응답이 비어있습니다');
-
-  // applicable_law, law_summary 저장
   aiState.applicableLaw = data.applicable_law || '';
   aiState.lawSummary    = data.law_summary || '';
+  aiState.gapAnalysis   = data.gap_analysis || null;
+  aiState.stage0Analysis = data.stage0_analysis || null;  // ★ 분석 결과 저장
 
-  // gap_analysis 저장 (사실관계 화면에서 사용)
-  aiState.gapAnalysis = data.gap_analysis || null;
-
-  // ── 핵심: questions 배열 (Stage 3 표적 질문) ──
   var questions = data.questions || [];
-
   if(questions.length > 0){
-    // ★ 최대 4개로 제한
     questions = questions.slice(0, 4);
-    // 백엔드 questions → 체크리스트 UI 변환
     var checklist = questions.map(function(q, i){
       return {
-        id:       q.variable || ('q_'+i),   // data_field명 = variable
+        id: q.variable || ('q_'+i),
         category: q.category || '확인사항',
         question: q.question || '',
-        desc:     q.description || '',
+        desc: q.description || '',
         priority: q.priority || 'important',
         legalBasis: q.legal_basis || ''
       };
     });
-
-    renderChecklist({
-      questions:      checklist,
-      applicable_law: aiState.applicableLaw,
-      law_summary:    aiState.lawSummary
-    });
+    renderChecklist({questions:checklist, applicable_law:aiState.applicableLaw, law_summary:aiState.lawSummary});
     return;
   }
-
-  // questions가 비어있으면 — 직접 리포트로 진행
   console.warn('[EEHO] questions 비어있음, 리포트 단계로 진행');
   proceedToReport();
 }
 
-/* ════════════════════════════════════════════════════════════════
-   체크리스트 렌더링
-   ════════════════════════════════════════════════════════════════ */
+/* 체크리스트 렌더링 */
 function renderChecklist(data){
   aiState.applicableLaw = data.applicable_law || aiState.applicableLaw || '';
   aiState.lawSummary    = data.law_summary || aiState.lawSummary || '';
-
   var questions = data.questions || [];
   var $wrap = $('#checklistQuestions').empty();
   questions.forEach(function(q){
     var descHtml = q.desc ? '<div class="eh-cl-desc">'+esc(q.desc)+'</div>' : '';
-    // data-id에 variable(data_field명)을 저장 → /confirm 전송 시 사용
     var html='<div class="eh-cl-item" data-id="'+esc(q.id)+'">'
       +'<div class="eh-cl-category">'+esc(q.category)+'</div>'
       +'<div class="eh-cl-question">'+esc(q.question)+'</div>'
@@ -989,19 +1194,15 @@ A.on('click','.eh-cl-btn',function(){
   $item.removeClass('eh-cl-error');
 });
 
-/* ════════════════════════════════════════════════════════════════
-   Phase 2: 체크리스트 제출 → /confirm → 사실관계
-   입력: ConfirmRequest {session_id, original_request, checklist_answers:[{variable,answer}]}
-   ════════════════════════════════════════════════════════════════ */
+/* Phase 2: /confirm */
 $('#checklistSubmit').on('click',function(){
   var answers=[], allAnswered=true;
   $('.eh-cl-item').each(function(){
-    var variable=$(this).data('id');        // data_field명 (variable)
+    var variable=$(this).data('id');
     var answer=$(this).find('.eh-cl-answer').val();
     if(!answer){allAnswered=false;$(this).addClass('eh-cl-error');}
     else{
       $(this).removeClass('eh-cl-error');
-      // 백엔드 ChecklistAnswer: {variable: str, answer: str}
       answers.push({variable: variable, answer: answer});
     }
   });
@@ -1009,11 +1210,14 @@ $('#checklistSubmit').on('click',function(){
 
   aiState.checklistAnswers = answers;
 
-  // 백엔드 ConfirmRequest 형식 — original_request에 원본 payload 포함
+  // ★ original_request에 stage0_analysis 포함하여 /confirm에 전달
+  var origWithStage0 = JSON.parse(JSON.stringify(aiState.payload));
+  if(aiState.stage0Analysis) origWithStage0.stage0_analysis = aiState.stage0Analysis;
+
   var confirmPayload = {
     session_id:        aiState.sessionId,
-    original_request:  aiState.payload,  // AnalyzeRequest 전체를 포함
-    checklist_answers: answers,           // [{variable, answer}]
+    original_request:  origWithStage0,
+    checklist_answers: answers,
     user_corrections:  null
   };
 
@@ -1023,39 +1227,26 @@ $('#checklistSubmit').on('click',function(){
   callAPI(confirmPayload, '/confirm')
     .then(function(data){
       console.log('[EEHO] ← /confirm:', JSON.stringify(data).substring(0,800));
-      if(data._error || data.result){throw new Error(data.result || 'API 서버 오류');}
+      if(data._error) throw new Error(data._error);
+      if(data.result && !data.사실관계 && !data.status){throw new Error(data.result);}
       handleConfirmResponse(data);
     })
     .catch(handleError);
 });
 
-/* /confirm 응답 처리 — 백엔드: {session_id, 사실관계:{사실관계_요약, 요건_충족_판단}, data_quality, 안내} */
 function handleConfirmResponse(data){
   if(!data) throw new Error('응답이 비어있습니다');
-
   aiState.confirmData = data.사실관계 || data;
-
-  // 현재 백엔드 형식: {사실관계: {...}}
-  if(data.사실관계){
-    renderConfirmFromBackend(data);
-    return;
-  }
-
-  // 리포트 직접 반환
+  if(data.사실관계){renderConfirmFromBackend(data);return;}
   if(data.리포트){renderFinalReport(data);return;}
   if(data.status==='success'){renderFinalReport(data);return;}
-
-  // 알 수 없는 형식 → 리포트로
   console.warn('[EEHO] /confirm 형식 불명, 리포트 진행');
   proceedToReport();
 }
 
-/* 백엔드 /confirm 응답 → 사실관계 확인 UI */
 function renderConfirmFromBackend(data){
   var facts = data.사실관계 || {};
   var summary = facts.사실관계_요약 || {};
-
-  // 사실관계 텍스트 — 줄글 대신 항목별 구조화
   var factHtml = '';
   Object.keys(summary).forEach(function(key){
     var val = summary[key];
@@ -1067,21 +1258,15 @@ function renderConfirmFromBackend(data){
   aiState.factSummary = JSON.stringify(summary);
   $('#confirmFactSummary').html(factHtml || '<span style="color:var(--text-m)">사실관계를 분석했습니다.</span>');
 
-  // 요건 충족 판단 — 색상: 예/충족=green, 미충족=red, 확인필요/아니오=amber
   var reqs = facts.요건_충족_판단 || facts.적용_검토_조문 || [];
   var $reqWrap=$('#confirmRequirements').empty();
   reqs.forEach(function(r){
     var status = r.충족여부 || '확인필요';
     var cls, icon;
-    if(status==='충족' || status==='예'){
-      cls='pass'; icon='✓';
-    } else if(status==='미충족'){
-      cls='fail'; icon='✗';
-    } else {
-      cls='review'; icon='△';
-    }
+    if(status==='충족' || status==='예'){cls='pass';icon='✓';}
+    else if(status==='미충족'){cls='fail';icon='✗';}
+    else{cls='review';icon='△';}
     if(r.요건) aiState.applicableLaw = r.요건;
-    // 근거 텍스트에서 영문 변수명(snake_case) 제거
     var reasonText = cleanVarNames(r.근거||r.판단근거||'');
     $reqWrap.append(
       '<div class="eh-req-row eh-req-'+cls+'">'
@@ -1092,45 +1277,33 @@ function renderConfirmFromBackend(data){
     );
   });
 
-  // 비과세 가능성 (data_quality → completeness_after)
   var dq = data.data_quality || {};
   var comp = dq.completeness_after || 0;
   var confLabel, confCls;
   if(comp >= 0.7){confLabel='비과세 가능성 높음';confCls='high';}
   else if(comp >= 0.4){confLabel='추가 검토 필요';confCls='mid';}
   else{confLabel='비과세 가능성 낮음';confCls='low';}
-  // facts에서 직접 비과세_가능성이 있으면 우선
   var directConf = facts.비과세_가능성 || '';
   if(directConf==='높음'){confLabel='비과세 가능성 높음';confCls='high';}
   else if(directConf==='낮음'){confLabel='비과세 가능성 낮음';confCls='low';}
   else if(directConf==='보통'){confLabel='추가 검토 필요';confCls='mid';}
   $('#confirmConfidence').text(confLabel).attr('class','eh-conf-badge eh-conf-'+confCls);
 
-  // 세액 비교
-  var baseTax = (aiState.payload && aiState.payload.calculated_data) ?
-    aiState.payload.calculated_data.estimated_total_tax : currentEstimatedTax;
-  $('#confirmTaxBefore').text('₩'+fmt(baseTax));
-  $('#confirmTaxAfter').text(confCls==='high' ? '₩0 (비과세 예상)' : '세무사 확인 필요');
-  $('#confirmTaxSaving').text(confCls==='high' ? '₩'+fmt(baseTax)+' 절세 가능' : '-');
-
   if(aiState.isSecondRound){$('#supplementBtn').hide();$('#confirmGuideText').hide();}
   else{$('#supplementBtn').show();$('#confirmGuideText').show();}
   showAI('#aiConfirmPhase');
 }
 
-/* ════════════════════════════════════════════════════════════════
-   Phase 3a: 제출하기 → /report → 최종 리포트
-   입력: AnalyzeRequest (buildPayload) + additional_data에 사실관계/체크리스트 포함
-   ════════════════════════════════════════════════════════════════ */
+/* Phase 3a: /report */
 $('#submitFinal').on('click',function(){ proceedToReport(); });
 
 function proceedToReport(){
-  // /report는 AnalyzeRequest를 받음 = buildPayload 형식
-  // additional_data에 fact_summary, checklist_answers를 담아서 전송
-  var reportPayload = JSON.parse(JSON.stringify(aiState.payload)); // deep copy
+  var reportPayload = JSON.parse(JSON.stringify(aiState.payload));
   reportPayload.additional_data = reportPayload.additional_data || {};
   reportPayload.additional_data.fact_summary = aiState.factSummary || '';
   reportPayload.additional_data.checklist_answers = aiState.checklistAnswers || [];
+  // ★ stage0_analysis 전달 → /report가 일관된 분석 기반으로 리포트 생성
+  if(aiState.stage0Analysis) reportPayload.additional_data.stage0_analysis = aiState.stage0Analysis;
 
   console.log('[EEHO] ★ /report payload:', JSON.stringify(reportPayload).substring(0,800));
   showLoading();
@@ -1144,9 +1317,7 @@ function proceedToReport(){
     .catch(handleError);
 }
 
-/* ════════════════════════════════════════════════════════════════
-   Phase 3b: 보완하기
-   ════════════════════════════════════════════════════════════════ */
+/* Phase 3b: 보완하기 */
 $('#supplementBtn').on('click',function(){showAI('#aiSupplementPhase');});
 $('#backToConfirm').on('click',function(){showAI('#aiConfirmPhase');});
 $('#supplementInput').on('input',function(){$('#supplementCnt').text($(this).val().length);});
@@ -1158,7 +1329,6 @@ $('#supplementSubmit').on('click',function(){
   aiState.isSecondRound=true;
   saveRlhfData(text);
 
-// ★ Phase 2: 보완하기 텍스트 → /feedback 전송 (Self-Correcting Loop)
   var feedbackPayload = {
     session_id:      aiState.sessionId,
     original_report: aiState.confirmData || {},
@@ -1166,17 +1336,16 @@ $('#supplementSubmit').on('click',function(){
     rating:          3
   };
   callAPI(feedbackPayload, '/feedback')
-    .then(function(res){
-      console.log('[EEHO] ★ /feedback 저장 완료:', res.triage_result, '| 오답노트:', res.saved_to_error_notes);
-    })
-    .catch(function(err){
-      console.warn('[EEHO] /feedback 저장 실패 (무시):', err);
-    });
-   
-  // /confirm 재호출: 보완 내용을 user_corrections에 포함
+    .then(function(res){console.log('[EEHO] ★ /feedback 저장 완료:', res.triage_result);})
+    .catch(function(err){console.warn('[EEHO] /feedback 저장 실패 (무시):', err);});
+
+  // ★ original_request에 stage0_analysis 포함
+  var origWithStage0b = JSON.parse(JSON.stringify(aiState.payload));
+  if(aiState.stage0Analysis) origWithStage0b.stage0_analysis = aiState.stage0Analysis;
+
   var confirmPayload = {
     session_id:        aiState.sessionId,
-    original_request:  aiState.payload,
+    original_request:  origWithStage0b,
     checklist_answers: aiState.checklistAnswers || [],
     user_corrections:  {보완내용: text}
   };
@@ -1185,15 +1354,13 @@ $('#supplementSubmit').on('click',function(){
   callAPI(confirmPayload, '/confirm')
     .then(function(data){
       console.log('[EEHO] ← /confirm(보완):', JSON.stringify(data).substring(0,800));
-      if(data._error || data.result){throw new Error(data.result || 'API 서버 오류');}
+      if(data._error) throw new Error(data._error);
+      if(data.result && !data.사실관계 && !data.status){throw new Error(data.result);}
       handleConfirmResponse(data);
     })
     .catch(handleError);
 });
 
-/* ================================================================
-   RLHF 저장
-   ================================================================ */
 function saveRlhfData(supplementText){
   var ajaxUrl=(typeof eehoTax!=='undefined'&&eehoTax.ajax)?eehoTax.ajax:'/wp-admin/admin-ajax.php';
   var nonce=(typeof eehoTax!=='undefined'&&eehoTax.nonce)?eehoTax.nonce:'';
@@ -1212,7 +1379,7 @@ function saveRlhfData(supplementText){
 }
 
 /* ================================================================
-   ★ 최종 리포트 렌더링 (버전 A + 신규 백엔드 형식 통합)
+   최종 리포트 렌더링
    ================================================================ */
 function renderFinalReport(data){
   var isPASS   = data.result_type==='PASS';
@@ -1222,58 +1389,49 @@ function renderFinalReport(data){
   var confPct  = (data.confidence_pct!=null)?Number(data.confidence_pct):null;
   var detailRaw='', riskRaw='', lawText='', lawSummary='';
 
-  /* ── 신규 백엔드 형식: data.리포트 ── */
   if(data.리포트){
     var report=data.리포트;
     var compare=report.세액비교||{};
     var savedTax=compare.절감액||0;
     if(compare.절세_적용후_세액!==undefined) afterTax=Number(compare.절세_적용후_세액);
 
-    // result_type 우선 사용 (FAIL이면 isPASS=false 확정)
     if(data.result_type==='PASS') isPASS=true;
     else if(data.result_type==='FAIL'){isPASS=false;isREVIEW=false;afterTax=baseTax;}
-    else if(data.result_type==='REVIEW'){isPASS=false;isREVIEW=true;}
+    else if(data.result_type==='REVIEW'){
+      isPASS=false;isREVIEW=true;
+      // ★ REVIEW인데 afterTax=0이면 감면 확정 아님 → 기준세액 유지
+      if(afterTax===0 && baseTax>0) afterTax=baseTax;
+    }
     else{isPASS=(savedTax>0||(afterTax!==undefined&&afterTax===0));}
 
-    // ★ FAIL인데 confidence 70%+ 이면 confidence를 보정
-    if(!isPASS && !isREVIEW && confPct!==null && confPct>=70){
-      confPct=Math.min(confPct, 30);
-    }
+    if(!isPASS && !isREVIEW && confPct!==null && confPct>=70) confPct=Math.min(confPct, 30);
 
-    // 판단근거: string[] 또는 object[] 둘 다 처리
     var details=[];
     if(report.종합의견)details.push(report.종합의견);
     if(report.판단근거&&report.판단근거.length){
       report.판단근거.forEach(function(item){
-        if(typeof item==='string'){
-          if(item.trim() && item!=='[]') details.push(item);
-        } else if(typeof item==='object'){
+        if(typeof item==='string'){if(item.trim()&&item!=='[]')details.push(item);}
+        else if(typeof item==='object'){
           var line=(item.조문?'【'+item.조문+'】 ':'')+(item.판단||item.내용||'');
-          if(line.trim()) details.push(line);
+          if(line.trim())details.push(line);
         }
       });
     }
     detailRaw=details.join('\n\n');
 
-    // 리스크: string[] 또는 object[] 둘 다 처리
     var risks=[];
     if(report.리스크&&report.리스크.length){
       report.리스크.forEach(function(item){
-        if(typeof item==='string'){
-          if(item.trim() && item!=='[]') risks.push(item);
-        } else if(typeof item==='object'){
+        if(typeof item==='string'){if(item.trim()&&item!=='[]')risks.push(item);}
+        else if(typeof item==='object'){
           var line=(item.유형?'['+item.유형+'] ':'')+(item.내용||'')+(item.대응방안?'\n→ '+item.대응방안:'');
-          if(line.trim()) risks.push(line);
+          if(line.trim())risks.push(line);
         }
       });
     }
     riskRaw=risks.join('\n\n');
-
-    // 법령 정보 (data 최상위 또는 report 내부)
     lawText=data.applicable_law||'';
     lawSummary=data.law_summary||'';
-
-  /* ── 기존 형식 ── */
   } else {
     if(data.tax_after_applied!=null) afterTax=Number(data.tax_after_applied);
     detailRaw=data.details||'';
@@ -1284,11 +1442,9 @@ function renderFinalReport(data){
 
   if(!lawText)lawText=data.applicable_law||aiState.applicableLaw||'';
   if(!lawSummary)lawSummary=data.law_summary||aiState.lawSummary||'';
-  // fallback: 리포트 내부가 비어있으면 상위 레벨 사용
   if(!detailRaw && data.details) detailRaw=data.details;
   if(!riskRaw && data.risk_warning) riskRaw=data.risk_warning;
 
-  /* ── 배지 ── */
   var $badge=$('#finalResultBadge');
   $badge.removeClass('eh-badge-pass eh-badge-fail eh-badge-review');
   if(isPASS){
@@ -1302,7 +1458,6 @@ function renderFinalReport(data){
     $('#finalBadgeLabel').text('비과세 요건 미충족');$('#finalBadgeType').text('FAIL');
   }
 
-  /* ── 세액 비교 ── */
   $('#finalBefore').text('₩'+fmt(baseTax));
 
   var pctColor='#888',pctBg='rgba(128,128,128,0.12)';
@@ -1312,13 +1467,16 @@ function renderFinalReport(data){
     else{pctColor='var(--ember)';pctBg='rgba(249,92,50,0.10)';}
   }
   var afterAmtStr=afterTax===0?'₩0':'₩'+fmt(afterTax);
+  // ★ REVIEW일 때는 확정 금액이 아닌 안내 메시지
+  if(isREVIEW && afterTax===baseTax){
+    afterAmtStr='세무사 확인 필요';
+  }
   var pctBadgeHtml='';
   if(confPct!==null){
     pctBadgeHtml='<span style="display:inline-flex;align-items:center;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:700;background:'+pctBg+';color:'+pctColor+';border:1px solid '+pctColor+';white-space:nowrap;vertical-align:middle;margin-left:8px">적용 가능성 '+confPct+'%</span>';
   }
   $('#finalAfter').html('<span style="font-weight:800;color:var(--teal)">'+afterAmtStr+'</span>'+pctBadgeHtml);
 
-  /* ── 절세 효과 ── */
   var saving=baseTax-afterTax;
   var $savingEl=$('#finalTaxSaving');
   if(saving>0&&confPct!==null){
@@ -1331,7 +1489,6 @@ function renderFinalReport(data){
     $savingEl.hide();
   }
 
-  /* ── 키워드 강조 + 불릿 변환 ── */
   function highlight(txt){
     return esc(txt)
       .replace(/(비과세|절세|감면|공제|특례|요건 충족|적용 가능)/g,'<strong style="color:var(--teal);text-decoration:underline">$1</strong>')
@@ -1347,11 +1504,8 @@ function renderFinalReport(data){
       .filter(function(s){
         if(s.length<=8) return false;
         if(s==='[]' || /^\[.*\]$/.test(s)) return false;
-        // 법령명만 있는 줄 (근거 법령 섹션에서 이미 표시)
         if(/^(소득세법|상속세|증여세|지방세법|종합부동산세법|조세특례제한법)/.test(s) && s.length<60) return false;
-        // 고객 제공/입력 정보 줄
         if(/고객\s*(제공|입력|기재)\s*(정보|데이터|내용)/.test(s)) return false;
-        // 괄호 안에 필드명만 나열된 줄 (취득일, 양도일, ...)
         if(/^\(.*[,，].*\)$/.test(s.trim())) return false;
         return true;
       });
@@ -1360,7 +1514,6 @@ function renderFinalReport(data){
     return result.slice(0,max||3);
   }
 
-  /* ── 판단 근거 ── */
   var detailBullets=toBullets(detailRaw,4);
   var detailHtml='';
   if(detailBullets.length){
@@ -1374,8 +1527,6 @@ function renderFinalReport(data){
   }
   $('#finalDetails').html(detailHtml||'<p style="font-size:14px;color:var(--text-m);padding:8px 0">세무 전문가 상담 시 안내드립니다.</p>');
 
-  /* ── 법령 배지 ── */
-  /* ── 적용 법령 (조문 + 내용 통합) ── */
   if(lawText || lawSummary){
     $('#finalAppliedLaw').text(lawText || '');
     $('#finalLawSummary').text(lawSummary || '');
@@ -1384,7 +1535,6 @@ function renderFinalReport(data){
     $('#finalLawWrap').hide();
   }
 
-  /* ── 리스크 ── */
   var riskBullets=toBullets(riskRaw,3);
   var riskHtml='';
   if(riskBullets.length){
@@ -1416,7 +1566,7 @@ function handleError(err){
   showAI('#aiTextPhase');
 }
 function resetAIState(){
-  aiState={payload:{},userText:'',callCount:0,sessionId:'',applicableLaw:'',lawSummary:'',checklistAnswers:[],factSummary:'',supplementText:'',isSecondRound:false,gapAnalysis:null,confirmData:null};
+  aiState={payload:{},userText:'',callCount:0,sessionId:'',applicableLaw:'',lawSummary:'',checklistAnswers:[],factSummary:'',supplementText:'',isSecondRound:false,gapAnalysis:null,confirmData:null,stage0Analysis:null};
   $('#aiTextInput').val('');$('#aiTxtCnt').text('0');
   $('#supplementInput').val('');$('#supplementCnt').text('0');
 }
