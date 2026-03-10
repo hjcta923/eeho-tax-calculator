@@ -1,4 +1,4 @@
-/* EEHO Tax Calculator v6.0 — Teal & Ember Design System */
+/* EEHO Tax Calculator v8.1 — Teal & Ember Design System */
 
 /* ===== Google Fonts ===== */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700;900&family=Pretendard+Variable&display=swap');
@@ -310,7 +310,7 @@
 #eeho-app .eh-chip.active { background: var(--teal); color: var(--white); border-color: var(--teal); }
 #eeho-app .eh-amount-section { margin-top: 20px; }
 
-/* ★ [v7.4] 금액 입력 — 잘림 방지 수정 */
+/* ★ [v7.4] 금액 입력 — 잘림 방지 */
 #eeho-app .eh-amount-box { background: var(--pearl); border-radius: var(--R); padding: 24px 16px 20px; margin-bottom: 20px; overflow: hidden; }
 #eeho-app .eh-amount-box.sm { padding: 16px; margin-bottom: 0; background: transparent; }
 #eeho-app .eh-amount-display { display: flex; align-items: baseline; justify-content: center; gap: 4px; width: 100%; overflow: hidden; }
@@ -354,8 +354,6 @@
 #eeho-app .eh-date-field label { display: block; font-size: 15px !important; font-weight: 700 !important; color: var(--text) !important; margin-bottom: 6px; }
 #eeho-app .eh-date-input { width: 100%; padding: 14px 16px; font-size: 15px; font-family: var(--F); border: 1.5px solid var(--gray); border-radius: var(--Rs); background: var(--white); color: var(--text); transition: border-color var(--trans); }
 #eeho-app .eh-date-input:focus { border-color: var(--teal); outline: none; box-shadow: 0 0 0 3px rgba(0,68,71,.08); }
-#eeho-app .eh-date-row-single { margin-top: 0; }
-#eeho-app .eh-date-row-single .eh-date-field { max-width: 50%; }
 
 /* ===== Step 4: Result ===== */
 #eeho-app .eh-result-layout { grid-template-columns: 1fr 320px; align-items: stretch; }
@@ -381,31 +379,12 @@
 #eeho-app .eh-btn-yellow { background: var(--ember) !important; color: var(--white) !important; }
 #eeho-app .eh-btn-yellow:hover { background: var(--ember-d) !important; }
 
-/* ===== AI Chat Phase ===== */
+/* ===== AI Header ===== */
 #eeho-app .eh-ai-header { padding: 20px 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 #eeho-app .eh-brand { font-size: 20px; font-weight: 800; letter-spacing: .03em; color: var(--text); }
 #eeho-app .eh-brand-ai { color: var(--teal); font-weight: 500; font-size: 0.85em; }
 #eeho-app .eh-ai-progress-bar { flex: 1; height: 3px; background: var(--gray); border-radius: 2px; min-width: 100px; }
 #eeho-app .eh-ai-progress-fill { height: 100%; background: var(--ember); border-radius: 2px; transition: width .5s ease; width: 0; }
-#eeho-app .eh-ai-layout { display: grid; grid-template-columns: 1fr 320px; gap: 20px; min-height: 400px; align-items: stretch; }
-#eeho-app .eh-ai-chat-area { background: var(--white); border-radius: var(--R); padding: 24px; box-shadow: var(--shadow); max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; }
-
-/* Chat Bubbles */
-#eeho-app .eh-bubble { margin-bottom: 16px; animation: ehSlideIn .3s ease; }
-#eeho-app .eh-bubble.ai { display: flex; align-items: flex-start; }
-#eeho-app .eh-bubble.user { display: block; text-align: right; }
-#eeho-app .eh-bubble.user > div { display: inline-block; max-width: 80%; text-align: left; }
-#eeho-app .eh-bubble-label { font-size: 12px; font-weight: 700; color: var(--text-m); margin-bottom: 4px; }
-#eeho-app .eh-bubble-content { max-width: 80%; padding: 16px 20px; border-radius: 18px; font-size: 14px; line-height: 1.6; }
-#eeho-app .eh-bubble.ai .eh-bubble-content { background: var(--pearl); border-top-left-radius: 4px; color: var(--text); }
-#eeho-app .eh-bubble.user .eh-bubble-content { background: var(--teal); border-top-right-radius: 4px; color: var(--white); max-width: none; }
-#eeho-app .eh-bubble.ai > div { max-width: 85%; width: fit-content; }
-#eeho-app .eh-bubble.ai .eh-bubble-content { max-width: none; }
-
-/* AI Sidebar */
-#eeho-app .eh-ai-sidebar { background: var(--white); border-radius: var(--R); padding: 24px; box-shadow: var(--shadow); position: sticky; top: 100px; display: flex; flex-direction: column; }
-#eeho-app .eh-ai-sb-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
-#eeho-app .eh-ai-sb-desc { font-size: 13px; color: var(--text-m); margin-bottom: 16px; line-height: 1.5; }
 
 /* ===== Examples ===== */
 #eeho-app .eh-examples { margin: 20px 0 28px; }
@@ -421,17 +400,22 @@
 #eeho-app .eh-ta-cnt { font-size: 12px; color: var(--text-m); }
 #eeho-app .eh-btn-full { width: 100%; margin-top: 16px; }
 #eeho-app .eh-btn-sm { padding: 10px 18px; font-size: 13px; }
+#eeho-app .eh-btn-ghost.eh-btn-sm { padding: 10px 18px; font-size: 13px; }
+
+/* ===== Ghost btn (small) ===== */
+#eeho-app .eh-btn-ghost-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-s);
+  border: 1.5px solid var(--gray);
+  border-radius: var(--Rs);
+  background: transparent;
+  transition: all var(--trans);
+}
 
 /* ===== Loading ===== */
 #eeho-app .eh-loading { text-align: center; padding: 80px 20px; }
-#eeho-app .eh-ld-ring { position: relative; width: 120px; height: 120px; margin: 0 auto 28px; }
-#eeho-app .eh-ld-ring svg { width: 120px; height: 120px; }
-#eeho-app .eh-ld-ring circle:first-child { stroke: var(--pearl-d); }
-#eeho-app .eh-ld-ring .eh-ld-anim { stroke: var(--ember); animation: ehRing 2s ease infinite; }
-#eeho-app .eh-ld-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); }
-#eeho-app .eh-ld-icon svg rect { stroke: var(--teal); }
-#eeho-app .eh-ld-icon svg circle { fill: var(--teal); }
-#eeho-app .eh-ld-icon svg path { stroke: var(--teal); }
 #eeho-app .eh-ld-title { font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
 #eeho-app .eh-ld-dots::after { content: ''; animation: ehDots 1.5s infinite; }
 #eeho-app .eh-ld-desc { font-size: 15px; color: var(--text-s); line-height: 1.6; margin-bottom: 8px; }
@@ -453,6 +437,10 @@
 #eeho-app .eh-badge-fail .eh-badge-icon { background: var(--red); color: #fff; }
 #eeho-app .eh-badge-fail .eh-badge-label { color: #B71C1C; }
 #eeho-app .eh-badge-fail .eh-badge-type { color: var(--red); }
+#eeho-app .eh-badge-review { background: linear-gradient(135deg,#FFF8E1 0%,#FFE082 100%); border: 1.5px solid #FFB300; }
+#eeho-app .eh-badge-review .eh-badge-icon { background: #F57F17; color: #fff; }
+#eeho-app .eh-badge-review .eh-badge-label { color: #E65100; }
+#eeho-app .eh-badge-review .eh-badge-type { color: #F57F17; }
 
 /* Compare */
 #eeho-app .eh-card-compare { margin-bottom: 20px; }
@@ -469,13 +457,8 @@
 #eeho-app .eh-card-breakdown { margin-bottom: 16px; }
 #eeho-app .eh-card-breakdown h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: var(--teal); }
 #eeho-app .eh-details-text { padding: 4px 0; }
-#eeho-app .eh-details-content { white-space: pre-line; line-height: 1.8; font-size: 14.5px; color: var(--text); }
 #eeho-app .eh-card-risk { margin-bottom: 16px; border-left: 4px solid var(--ember); }
 #eeho-app .eh-card-risk h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: var(--ember); }
-#eeho-app .eh-risk-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 14px; line-height: 1.55; color: var(--text-s); }
-#eeho-app .eh-risk-item::before { content: '⚠'; flex-shrink: 0; }
-#eeho-app .eh-risk-none { color: #999 !important; background: none !important; }
-#eeho-app .eh-risk-none::before { content: "✓ " !important; color: var(--green) !important; }
 
 /* Notice */
 #eeho-app .eh-card-notice { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 24px; background: var(--teal-xl); border: 1px solid rgba(0,68,71,.12); }
@@ -491,19 +474,6 @@
 #eeho-app .eh-conv-chat { flex: 1; overflow-y: auto; padding: 24px 20px 12px; display: flex; flex-direction: column; gap: 16px; }
 #eeho-app .eh-conv-input-area { border-top: 1px solid var(--pearl-d); padding: 20px; background: var(--pearl); }
 #eeho-app .eh-conv-input-area:empty { display: none; }
-#eeho-app .eh-conv-field { margin-bottom: 16px; }
-#eeho-app .eh-conv-label { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
-#eeho-app .eh-conv-field .eh-date-input, #eeho-app .eh-conv-field .eh-text-input { width: 100%; }
-#eeho-app .eh-field-error { border-color: var(--red) !important; box-shadow: 0 0 0 2px rgba(211,47,47,.12) !important; }
-#eeho-app .eh-conv-toggle-row { display: flex; gap: 10px; }
-#eeho-app .eh-conv-toggle-btn { flex: 1; padding: 12px 16px; border: 1.5px solid var(--pearl-d); border-radius: 12px; background: #fff; font-size: 15px; font-weight: 600; color: var(--text); cursor: pointer; transition: all .2s; }
-#eeho-app .eh-conv-toggle-btn:hover { border-color: var(--teal); background: var(--teal-xl); }
-#eeho-app .eh-conv-toggle-btn.selected { border-color: var(--teal); background: var(--teal); color: #fff; }
-#eeho-app .eh-conv-submit { margin-top: 8px; }
-#eeho-app .eh-conv-select-row { display: flex; flex-wrap: wrap; gap: 8px; }
-#eeho-app .eh-conv-select-btn { padding: 10px 18px; border: 1.5px solid var(--pearl-d); border-radius: 12px; background: #fff; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; transition: all .2s; }
-#eeho-app .eh-conv-select-btn:hover { border-color: var(--teal); background: var(--teal-xl); }
-#eeho-app .eh-conv-select-btn.selected { border-color: var(--teal); background: var(--teal); color: #fff; }
 
 /* ===== Inputs ===== */
 #eeho-app .eh-extra-input { margin-top: 14px; margin-bottom: 0; }
@@ -524,52 +494,9 @@
 #eeho-app .eh-help-table { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.5; }
 #eeho-app .eh-help-table th, #eeho-app .eh-help-table td { border: 1px solid var(--gray); padding: 8px 10px; text-align: left; vertical-align: top; }
 #eeho-app .eh-help-table th { background: var(--pearl); font-weight: 700; white-space: nowrap; }
-#eeho-app .eh-help-table td:first-child { white-space: nowrap; font-weight: 600; }
 #eeho-app .eh-help-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
 
-/* AI Stack */
-#eeho-app .eh-ai-stack { display: flex; flex-direction: column; gap: 20px; }
-#eeho-app .eh-ai-stack .eh-ai-chat-area { min-height: 200px; max-height: 400px; }
-#eeho-app .eh-ai-stack .eh-ai-sidebar { position: static; }
-
-/* ===== Responsive ===== */
-@media (max-width: 768px) {
-  #eeho-app { padding: 0 16px 60px; }
-  #eeho-app .eh-hero-title { font-size: 28px; }
-  #eeho-app .eh-hero { padding: 32px 0 24px; }
-  #eeho-app .eh-layout-2col { grid-template-columns: 1fr; }
-  #eeho-app .eh-result-layout { grid-template-columns: 1fr; }
-  #eeho-app .eh-ai-layout { grid-template-columns: 1fr; }
-  #eeho-app .eh-ai-cta-list li { white-space: normal; }
-  #eeho-app .eh-compare-row { grid-template-columns: 1fr; }
-  #eeho-app .eh-compare-before { border-right: none; border-bottom: 1px solid var(--gray-l); padding-bottom: 20px; }
-  #eeho-app .eh-compare-amt { font-size: 28px; }
-  #eeho-app .eh-final-actions { flex-direction: column; }
-  #eeho-app .eh-final-actions a, #eeho-app .eh-final-actions button { width: 100%; text-align: center; }
-  #eeho-app .eh-date-row { grid-template-columns: 1fr; }
-  #eeho-app .eh-card { padding: 28px 20px; }
-  #eeho-app .eh-progress-bar { padding: 16px 20px; }
-  #eeho-app .eh-help-popup { padding: 14px; }
-  #eeho-app .eh-help-table { font-size: 11px; }
-  #eeho-app .eh-help-table th, #eeho-app .eh-help-table td { padding: 6px 8px; }
-  #eeho-app .eh-amount-input { font-size: 28px; }
-}
-@media (max-width: 420px) {
-  #eeho-app .eh-type-name { font-size: 15px; }
-  #eeho-app .eh-type-card { padding: 20px 14px 16px; }
-  #eeho-app .eh-type-grid { gap: 10px; }
-  #eeho-app .eh-conv-card { min-height: 400px; }
-  #eeho-app .eh-conv-chat { padding: 16px 14px 8px; }
-  #eeho-app .eh-conv-input-area { padding: 14px; }
-  #eeho-app .eh-result-badge { padding: 18px 20px; gap: 12px; }
-  #eeho-app .eh-badge-icon { width: 44px; height: 44px; font-size: 22px; }
-  #eeho-app .eh-badge-label { font-size: 16px; }
-  #eeho-app .eh-date-row-single .eh-date-field { max-width: 100%; }
-  #eeho-app .eh-hero-title { font-size: 24px; }
-  #eeho-app .eh-amount-input { font-size: 22px; }
-}
-
-/* ===== v6.0: Step card padding override for progress bar ===== */
+/* ===== v6.0: Step card padding override ===== */
 #eeho-app .eh-step .eh-card-main {
   padding: 0;
   overflow: hidden;
@@ -600,4 +527,230 @@
 #eeho-app .eh-select-input:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px rgba(0,68,71,.08);
+}
+
+/* ===== Confirm ===== */
+#eeho-app .eh-conf-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+#eeho-app .eh-conf-high { background: rgba(46,125,50,.1); color: #2E7D32; border: 1px solid #2E7D32; }
+#eeho-app .eh-conf-mid  { background: rgba(217,119,6,.1);  color: #d97706; border: 1px solid #d97706; }
+#eeho-app .eh-conf-low  { background: rgba(211,47,47,.1);  color: #D32F2F; border: 1px solid #D32F2F; }
+#eeho-app .eh-req-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 10px; margin-bottom: 8px; }
+#eeho-app .eh-req-pass   { background: rgba(46,125,50,.06); }
+#eeho-app .eh-req-fail   { background: rgba(211,47,47,.06); }
+#eeho-app .eh-req-review { background: rgba(217,119,6,.06); }
+#eeho-app .eh-req-icon { font-size: 18px; font-weight: 700; flex-shrink: 0; width: 28px; text-align: center; }
+#eeho-app .eh-req-pass   .eh-req-icon { color: #2E7D32; }
+#eeho-app .eh-req-fail   .eh-req-icon { color: #D32F2F; }
+#eeho-app .eh-req-review .eh-req-icon { color: #d97706; }
+#eeho-app .eh-req-info { flex: 1; min-width: 0; }
+#eeho-app .eh-req-info strong { display: block; font-size: 14px; font-weight: 700; color: #1A1A18; }
+#eeho-app .eh-req-info span  { font-size: 12px; color: #8A8A88; }
+#eeho-app .eh-req-status { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+#eeho-app .eh-req-pass   .eh-req-status { color: #2E7D32; }
+#eeho-app .eh-req-fail   .eh-req-status { color: #D32F2F; }
+#eeho-app .eh-req-review .eh-req-status { color: #d97706; }
+#eeho-app .eh-confirm-fact { padding: 16px 20px; background: #F7F2F0; border-radius: 10px; border-left: 3px solid #004447; }
+
+/* ===== Checklist ===== */
+#eeho-app .eh-cl-item { padding: 20px 0; border-bottom: 1px solid #F0EDEB; }
+#eeho-app .eh-cl-item:last-child { border-bottom: none; }
+#eeho-app .eh-cl-category { font-size: 12px; font-weight: 700; color: #F95C32; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+#eeho-app .eh-cl-question { font-size: 15px; font-weight: 600; color: #1A1A18; line-height: 1.5; margin-bottom: 8px; }
+#eeho-app .eh-cl-desc { font-size: 13px; color: #8A8A88; line-height: 1.5; margin-bottom: 12px; }
+#eeho-app .eh-cl-btns { display: flex; gap: 10px; }
+#eeho-app .eh-cl-btn { flex: 1; padding: 12px 16px; border: 1.5px solid #D5D5D2; border-radius: 10px; background: #fff; font-size: 14px; font-weight: 600; color: #4A4A48; cursor: pointer; transition: all .25s; text-align: center; }
+#eeho-app .eh-cl-btn:hover          { border-color: #004447; color: #004447; background: rgba(0,68,71,.06); }
+#eeho-app .eh-cl-btn.selected       { border-color: #004447; background: #004447; color: #fff; }
+#eeho-app .eh-cl-btn.selected-no    { border-color: #D32F2F; background: #D32F2F; color: #fff; }
+#eeho-app .eh-cl-btn.selected-unknown { border-color: #8A8A88; background: #8A8A88; color: #fff; }
+#eeho-app .eh-cl-item.eh-cl-error   { background: rgba(211,47,47,.04); border-radius: 10px; padding: 20px 16px; margin: 0 -16px; }
+
+/* ===== Inherit / Prop Multi ===== */
+#eeho-app .eh-inherit-guide { font-size: 13px; color: #8A8A88; margin-bottom: 16px; line-height: 1.5; }
+#eeho-app .eh-inherit-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F0EDEB; }
+#eeho-app .eh-inherit-total { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 16px 20px; background: rgba(0,68,71,.06); border-radius: 10px; border: 1.5px solid rgba(0,68,71,.15); }
+#eeho-app .eh-inherit-total-amt { font-size: 24px; font-weight: 800; color: #004447; }
+#eeho-app .eh-prop-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #F0EDEB; }
+#eeho-app .eh-prop-label { font-size: 14px; font-weight: 700; color: #4A4A48; white-space: nowrap; min-width: 60px; }
+
+/* Shared Buttons */
+#eeho-app .eh-btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1.5px solid #D5D5D2; background: #fff; color: #8A8A88; font-size: 18px; cursor: pointer; flex-shrink: 0; line-height: 1; }
+#eeho-app .eh-btn-icon:hover { border-color: #D32F2F; color: #D32F2F; background: rgba(211,47,47,.06); }
+
+/* ===== Gift Relation Cards ===== */
+#eeho-app .eh-gift-rel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; }
+#eeho-app .eh-gift-rel-card { position: relative; background: #fff; border: 2px solid #F0EDEB; border-radius: 14px; padding: 20px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: all .25s; }
+#eeho-app .eh-gift-rel-card:hover { border-color: #D6C0B6; box-shadow: 0 4px 12px rgba(0,68,71,.06); }
+#eeho-app .eh-gift-rel-card.active { border-color: #F95C32; border-width: 2.5px; background: rgba(249,92,50,.04); box-shadow: 0 4px 16px rgba(249,92,50,.1); }
+#eeho-app .eh-gift-rel-icon { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+#eeho-app .eh-gift-label { font-size: 15px; font-weight: 700; color: #004447; padding: 4px 12px; background: rgba(0,68,71,.06); border-radius: 8px; }
+#eeho-app .eh-gift-rel-card.active .eh-gift-label { background: rgba(249,92,50,.08); color: #F95C32; }
+#eeho-app .eh-gift-arrow { font-size: 16px; color: #8A8A88; font-weight: 700; }
+#eeho-app .eh-gift-rel-card.active .eh-gift-arrow { color: #F95C32; }
+#eeho-app .eh-gift-rel-deduct { font-size: 12px; font-weight: 600; color: #004447; background: rgba(0,68,71,.06); padding: 3px 10px; border-radius: 12px; }
+
+/* ===== Result Note ===== */
+#eeho-app .eh-ri-note { padding: 10px 0; border-top: 1px solid #F0EDEB; }
+#eeho-app .eh-ri-note span { font-size: 13px; color: #8A8A88; font-style: italic; }
+
+/* ================================================================
+   ★ v8.1: 로그인 팝업 오버레이
+   ================================================================ */
+#ehLoginOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+#ehLoginModal {
+  position: relative;
+  background: #fff;
+  border-radius: 24px;
+  padding: 44px 36px 36px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  animation: ehFadeUp .3s ease;
+}
+
+/* 닫기 버튼 */
+#ehLoginClose {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  font-size: 24px;
+  font-weight: 300;
+  color: #8A8A88;
+  background: none;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: color .2s;
+}
+#ehLoginClose:hover { color: #1A1A18; }
+
+/* 로고 */
+#ehLoginModal .eh-login-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+#ehLoginModal .eh-login-logo span {
+  font-family: 'Noto Serif KR', Georgia, serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: #004447;
+  letter-spacing: -.01em;
+}
+
+/* 타이틀 */
+#ehLoginModal .eh-login-title {
+  font-family: 'Noto Serif KR', Georgia, serif;
+  font-size: 20px;
+  font-weight: 900;
+  color: #1A1A18;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+/* 설명 */
+#ehLoginModal .eh-login-desc {
+  font-size: 14px;
+  color: #4A4A48;
+  line-height: 1.65;
+  margin-bottom: 28px;
+}
+
+/* ★ 구글 로그인 버튼 */
+#ehGoogleLoginBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  background: #fff;
+  border: 1.5px solid #D5D5D2;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1A1A18;
+  text-decoration: none;
+  transition: all .25s;
+  cursor: pointer;
+  font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+}
+#ehGoogleLoginBtn:hover {
+  border-color: #004447;
+  background: rgba(0, 68, 71, .04);
+  box-shadow: 0 4px 16px rgba(0, 68, 71, .1);
+  transform: translateY(-1px);
+}
+#ehGoogleLoginBtn svg {
+  flex-shrink: 0;
+}
+
+/* 약관 안내 */
+#ehLoginModal .eh-login-terms {
+  font-size: 12px;
+  color: #8A8A88;
+  margin-top: 16px;
+  line-height: 1.5;
+}
+#ehLoginModal .eh-login-terms a {
+  color: #004447;
+  text-decoration: underline;
+}
+
+/* 모바일 대응 */
+@media (max-width: 480px) {
+  #ehLoginModal {
+    padding: 36px 24px 28px;
+    border-radius: 20px;
+  }
+  #ehLoginModal .eh-login-title {
+    font-size: 18px;
+  }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  #eeho-app { padding: 0 16px 60px; }
+  #eeho-app .eh-hero-title { font-size: 28px; }
+  #eeho-app .eh-hero { padding: 32px 0 24px; }
+  #eeho-app .eh-layout-2col { grid-template-columns: 1fr; }
+  #eeho-app .eh-result-layout { grid-template-columns: 1fr; }
+  #eeho-app .eh-ai-cta-list li { white-space: normal; }
+  #eeho-app .eh-compare-row { grid-template-columns: 1fr; }
+  #eeho-app .eh-compare-before { border-right: none; border-bottom: 1px solid var(--gray-l); padding-bottom: 20px; }
+  #eeho-app .eh-compare-amt { font-size: 28px; }
+  #eeho-app .eh-final-actions { flex-direction: column; }
+  #eeho-app .eh-final-actions a, #eeho-app .eh-final-actions button { width: 100%; text-align: center; }
+  #eeho-app .eh-date-row { grid-template-columns: 1fr; }
+  #eeho-app .eh-card { padding: 28px 20px; }
+  #eeho-app .eh-progress-bar { padding: 16px 20px; }
+  #eeho-app .eh-help-popup { padding: 14px; }
+  #eeho-app .eh-help-table { font-size: 11px; }
+  #eeho-app .eh-help-table th, #eeho-app .eh-help-table td { padding: 6px 8px; }
+  #eeho-app .eh-amount-input { font-size: 28px; }
+}
+@media (max-width: 420px) {
+  #eeho-app .eh-type-name { font-size: 15px; }
+  #eeho-app .eh-type-card { padding: 20px 14px 16px; }
+  #eeho-app .eh-type-grid { gap: 10px; }
+  #eeho-app .eh-conv-card { min-height: 400px; }
+  #eeho-app .eh-result-badge { padding: 18px 20px; gap: 12px; }
+  #eeho-app .eh-badge-icon { width: 44px; height: 44px; font-size: 22px; }
+  #eeho-app .eh-badge-label { font-size: 16px; }
+  #eeho-app .eh-hero-title { font-size: 24px; }
+  #eeho-app .eh-amount-input { font-size: 22px; }
+  #eeho-app .eh-gift-rel-grid { grid-template-columns: 1fr; }
 }
