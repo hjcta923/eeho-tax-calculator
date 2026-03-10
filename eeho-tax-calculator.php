@@ -23,9 +23,10 @@ add_action( 'wp_enqueue_scripts', function() {
     wp_enqueue_style( 'eeho-calc-css', EEHO_TAX_URL . 'assets/css/calculator.css', array(), EEHO_TAX_VER );
     wp_enqueue_script( 'eeho-calc-js', EEHO_TAX_URL . 'assets/js/calculator.js', array( 'jquery' ), EEHO_TAX_VER, true );
     wp_localize_script( 'eeho-calc-js', 'eehoTax', array(
-        'ajax'  => admin_url( 'admin-ajax.php' ),
-        'nonce' => wp_create_nonce( 'eeho_tax_nonce' ),
-        'api'   => get_option( 'eeho_api_url', '' ),
+    'ajax'      => admin_url( 'admin-ajax.php' ),
+    'nonce'     => wp_create_nonce( 'eeho_tax_nonce' ),
+    'api'       => get_option( 'eeho_api_url', '' ),
+    'isLoggedIn' => is_user_logged_in() ? 'yes' : 'no',
     ));
 });
 
