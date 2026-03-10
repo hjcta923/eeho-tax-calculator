@@ -1,3 +1,11 @@
+<?php
+// templates/calculator.php — HTML 출력 전용 (훅/함수 정의 없음)
+// 모든 wp_enqueue_scripts / add_action / add_shortcode 는 eeho-tax-calculator.php 에서 처리
+
+// Nextend Social Login — Google 로그인 URL
+$redirect         = urlencode('https://eehotax.com/ai-calculator/');
+$google_login_url = esc_url(site_url('/wp-login.php?loginSocial=google&redirect_to=' . $redirect));
+?>
 <style>
 #eeho-app .eh-hd{display:none!important}
 #eeho-app .eh-step{display:none!important}
@@ -230,9 +238,8 @@
         </div>
       </div>
 
-      <!-- ★ 상속세: 복수 자산 입력 (주소/부동산유형 없음) -->
+      <!-- ★ 상속세: 복수 자산 입력 -->
       <div id="inheritMultiAsset" style="display:none">
-        <!-- 피상속인/상속인 기본 정보 -->
         <div class="eh-field" style="margin-bottom:20px">
           <span class="eh-field-label">피상속인의 배우자 유무</span>
           <select class="eh-select-input" id="selSpouse">
@@ -259,7 +266,6 @@
             <option value="3+">3주택 이상</option>
           </select>
         </div>
-
         <div class="eh-field-label" style="margin-bottom:16px">상속 재산 목록</div>
         <p class="eh-inherit-guide">상속 재산의 종류별로 가액을 입력해주세요. 여러 자산이 있으면 '+ 자산 추가'를 눌러주세요.</p>
         <div id="inheritAssetList"></div>
@@ -270,7 +276,7 @@
         </div>
       </div>
 
-      <!-- ★ 재산세/종부세: 보유 주택 통합 입력 (Step 2에서 주택 수 + 공시가격 한 번에) -->
+      <!-- ★ 재산세/종부세: 보유 주택 통합 입력 -->
       <div id="propHouseSection" style="display:none">
         <div class="eh-field" style="margin-bottom:20px">
           <span class="eh-field-label">보유 주택 수</span>
@@ -332,7 +338,19 @@
         <div class="eh-help-popup eh-hd" id="regHelpPopup"><button type="button" class="eh-help-close" id="regHelpClose">&times;</button><h4>조정대상지역 지정·해제현황 (2025.10.16 현재)</h4><div class="eh-help-scroll"><table class="eh-help-table"><thead><tr><th>구분</th><th>지정지역</th><th>지정일자</th></tr></thead><tbody><tr><td rowspan="2">서울특별시(25)</td><td>서초구, 강남구, 송파구, 용산구 (4개구)</td><td>2017.9.6</td></tr><tr><td>종로구, 중구, 성동구, 광진구, 동대문구, 성북구, 강북구, 도봉구, 노원구, 은평구, 서대문구, 마포구, 양천구, 강서구, 구로구, 금천구, 영등포구, 동작구, 관악구, 강동구 (21개구)</td><td>2025.10.16 (재지정)</td></tr><tr><td rowspan="5">경기도(12)</td><td>과천시, 광명시, 하남시, 의왕시</td><td rowspan="5">2025.10.16 (재지정)</td></tr><tr><td>성남시 분당구·수정구·중원구</td></tr><tr><td>수원시 영통구·장안구·팔달구</td></tr><tr><td>용인시 수지구</td></tr><tr><td>안양시 동안구</td></tr></tbody></table></div></div>
       </div>
 
-      <!-- ★ 증여세 전용: 관계 선택 시각적 카드 + 추가 조건 -->
+      <!-- ★ 취득세 전용: 취득 사유 -->
+      <div id="f3AcqReason" class="eh-field eh-hd">
+        <span class="eh-field-label">취득 사유</span>
+        <select class="eh-select-input" id="selAcqReason">
+          <option value="buy" selected>매매 (일반 거래)</option>
+          <option value="inherit">상속으로 취득</option>
+          <option value="gift">증여로 취득</option>
+          <option value="new_build">신축 · 분양</option>
+          <option value="auction">경매 · 공매</option>
+        </select>
+      </div>
+
+      <!-- ★ 증여세 전용: 관계 선택 -->
       <div id="f3GiftSection" class="eh-hd">
         <div class="eh-field-label" style="margin-bottom:16px">증여자(주는 분)와 수증자(받는 분)의 관계</div>
         <p class="eh-inherit-guide" style="margin-bottom:16px">해당하는 관계를 선택해주세요. 관계에 따라 공제 금액이 달라집니다.</p>
@@ -446,8 +464,6 @@
       <!-- 상속세 전용: 공제 조건 + 채무 입력 -->
       <div id="f3InheritDebt" style="display:none">
         <p class="eh-subtitle" style="margin-bottom:24px">상속공제 판단에 필요한 조건과 채무를 입력해주세요</p>
-
-        <!-- 공제 조건 -->
         <div class="eh-field">
           <span class="eh-field-label">상속인이 피상속인과 같은 주택에서 동거하셨나요?</span>
           <select class="eh-select-input" id="selCohabitation">
@@ -480,8 +496,6 @@
             <option value="unknown">모름</option>
           </select>
         </div>
-
-        <!-- 채무 -->
         <div class="eh-field-label" style="margin-bottom:8px;margin-top:32px;padding-top:24px;border-top:1px solid #F0EDEB">채무 및 비용</div>
         <p class="eh-inherit-guide">예: 은행 대출금, 전세보증금(임대보증금), 미납 세금, 장례비용(최대 1,500만원), 병원비, 카드대금 등</p>
         <div id="inheritDebtList"></div>
@@ -670,4 +684,32 @@
     <button class="eh-btn-outline" id="backToResult">← 결과로 돌아가기</button>
   </div>
 </div>
+
+<!-- ★ 로그인 팝업 오버레이 -->
+<div id="ehLoginOverlay" style="display:none">
+  <div id="ehLoginModal">
+    <button id="ehLoginClose">&times;</button>
+    <div class="eh-login-logo">
+      <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="22" stroke="#004447" stroke-width="2.5"/>
+        <path d="M24 14v10l6 4" stroke="#F95C32" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <span>EEHO AI</span>
+    </div>
+    <h2 class="eh-login-title">로그인이 필요한 서비스입니다</h2>
+    <p class="eh-login-desc">EEHO AI 분석은 회원에게만 제공됩니다.<br>구글 계정으로 간편하게 시작하세요.</p>
+    <a id="ehGoogleLoginBtn" href="<?php echo $google_login_url; ?>">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      구글 계정으로 로그인
+    </a>
+    <p class="eh-login-terms">로그인 시 <a href="/privacy" target="_blank">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.</p>
+  </div>
 </div>
+
+</div><!-- /#eeho-app -->
